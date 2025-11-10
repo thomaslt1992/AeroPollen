@@ -1,6 +1,6 @@
 import pandas as pd
 
-from percentage import calculate_ps_percentage
+from aeropollen.ps_methods.percentage import calculate_ps_percentage
 
 
 def calculate_ps(
