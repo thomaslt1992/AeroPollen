@@ -32,15 +32,7 @@ def calculate_ps(
     clinical_pollen_type: str | None = None,
 ):
     """
-    Estimate main pollen season parameters.
-
-    Interface aligned with AeRobiology::calculate_ps.
-
-    Currently implemented:
-    - method='percentage': 5–perc % method.
-
-    For now, only data, perc, th_sum, interpolation, int_method and maxdays
-    have an effect. Other arguments are placeholders for future methods.
+    Estimate main pollen season parameters
     """
     if not isinstance(data, pd.DataFrame):
         raise ValueError("data must be a pandas DataFrame")

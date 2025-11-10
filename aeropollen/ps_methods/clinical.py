@@ -117,8 +117,10 @@ def calculate_ps_clinical(
             raw, interpolation=interpolation, int_method=int_method
         )
 
+        lookup_key = clinical_pollen_type or p_type
+
         params = _get_params_for_pollen(
-            p_type=p_type,
+            p_type=lookup_key,
             pollen_params=pollen_params,
             default_n_clinical=n_clinical,
             default_window_clinical=window_clinical,
