@@ -1,7 +1,7 @@
 import pandas as pd
 
-from ..preprocessing.interpolation import preprocess_pollen_timeseries
 from .percentage import calculate_ps_percentage
+from ..preprocessing.interpolation import preprocess_pollen_timeseries
 
 
 def calculate_ps(
@@ -72,13 +72,15 @@ def calculate_ps(
     method = method.lower()
 
     if method == "percentage":
+        if perc <= 5 or perc > 100:
+            raise ValueError("perc must be in (5, 100]. Typical value: 95.")
         result_obj = calculate_ps_percentage(
             dates=dates,
             pollen_df=df[pollen_cols],
             perc=perc,
             th_sum=th_sum,
+            day_threshold_value=th_day,
         )
-
     elif method == "clinical":
         raise NotImplementedError("Method 'clinical' is not implemented yet.")
 

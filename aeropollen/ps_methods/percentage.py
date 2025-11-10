@@ -7,17 +7,8 @@ def calculate_ps_percentage(
     pollen_df: pd.DataFrame,
     perc: float,
     th_sum: int,
+    day_threshold_value: int,
 ):
-    """
-    95% Percentage Method for Pollen Season Definition.
-
-    - season_start: date when cumulative sum >= 5% of total
-    - season_end:   date when cumulative sum >= perc% of total
-    - peak_date:    date with maximum daily pollen
-
-    Assumes data have already been preprocessed (sorted, optional interpolation).
-    If remaining NaNs prevent a robust season definition, the result is NA.
-    """
     results = []
 
     for p_type in pollen_df.columns:
@@ -36,31 +27,14 @@ def calculate_ps_percentage(
                     "peak_doy": np.nan,
                     "ps_length": np.nan,
                     "pollen_integral": np.nan,
-                    "status": "excluded (all values NaN)",
+                    "total_pollen_integral": np.nan,
+                    "day_threshold": np.nan,
                 }
             )
             continue
 
-        if np.isnan(series).any():
-            total_sum = np.nansum(series)
-            if total_sum < th_sum:
-                results.append(
-                    {
-                        "pollen_type": p_type,
-                        "season": np.nan,
-                        "season_start": pd.NaT,
-                        "season_end": pd.NaT,
-                        "peak_date": pd.NaT,
-                        "season_start_doy": np.nan,
-                        "season_end_doy": np.nan,
-                        "peak_doy": np.nan,
-                        "ps_length": np.nan,
-                        "pollen_integral": float(total_sum),
-                        "status": "excluded (NaNs present)",
-                    }
-                )
-                continue
-
+        total_sum = float(np.nansum(series))
+        if total_sum <= 0:
             results.append(
                 {
                     "pollen_type": p_type,
@@ -72,39 +46,26 @@ def calculate_ps_percentage(
                     "season_end_doy": np.nan,
                     "peak_doy": np.nan,
                     "ps_length": np.nan,
-                    "pollen_integral": float(total_sum),
-                    "status": "excluded (NaNs prevent PS definition)",
+                    "pollen_integral": np.nan,
+                    "total_pollen_integral": total_sum,
+                    "day_threshold": np.nan,
                 }
             )
             continue
 
-        total_sum = series.sum()
+        clean_series = np.nan_to_num(series, nan=0.0)
+        cumsum = np.cumsum(clean_series)
 
-        if total_sum < th_sum:
-            results.append(
-                {
-                    "pollen_type": p_type,
-                    "season": np.nan,
-                    "season_start": pd.NaT,
-                    "season_end": pd.NaT,
-                    "peak_date": pd.NaT,
-                    "season_start_doy": np.nan,
-                    "season_end_doy": np.nan,
-                    "peak_doy": np.nan,
-                    "ps_length": np.nan,
-                    "pollen_integral": float(total_sum),
-                    "status": "excluded (low total)",
-                }
-            )
-            continue
+        gap = (100.0 - perc) / 2.0
+        start_pct = gap
+        end_pct = 100.0 - gap
 
-        cumsum = np.cumsum(series)
-        start_threshold = total_sum * 0.05
-        end_threshold = total_sum * (perc / 100.0)
+        start_threshold = total_sum * (start_pct / 100.0)
+        end_threshold = total_sum * (end_pct / 100.0)
 
         start_idx = int(np.argmax(cumsum >= start_threshold))
         end_idx = int(np.argmax(cumsum >= end_threshold))
-        peak_idx = int(np.argmax(series))
+        peak_idx = int(np.nanargmax(series))
 
         start_date = dates.iloc[start_idx]
         end_date = dates.iloc[end_idx]
@@ -115,6 +76,10 @@ def calculate_ps_percentage(
         end_doy = int(end_date.dayofyear)
         peak_doy = int(peak_date.dayofyear)
         ps_length = int((end_date - start_date).days + 1)
+
+        season_slice = series[start_idx : end_idx + 1]
+        season_sum = float(np.nansum(season_slice))
+        days_above_threshold = int((season_slice > day_threshold_value).sum())
 
         results.append(
             {
@@ -127,8 +92,9 @@ def calculate_ps_percentage(
                 "season_end_doy": end_doy,
                 "peak_doy": peak_doy,
                 "ps_length": ps_length,
-                "pollen_integral": float(total_sum),
-                "status": "ok",
+                "pollen_integral": season_sum,
+                "total_pollen_integral": total_sum,
+                "day_threshold": int(days_above_threshold),
             }
         )
 
