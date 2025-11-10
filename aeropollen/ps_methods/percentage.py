@@ -9,7 +9,7 @@ def calculate_ps_percentage(
     th_sum: int,
 ):
     """
-    5–perc % pollen-season definition.
+    5 percentage % pollen-season definition.
     """
     results = []
 
