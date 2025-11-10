@@ -12,3 +12,4 @@ __pypackages__/
 
 # Local project notes
 notes.md
+*.csv
