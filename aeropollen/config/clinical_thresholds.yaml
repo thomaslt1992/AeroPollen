@@ -1,0 +1,44 @@
+grass:
+  n_clinical: 5
+  window_clinical: 7
+  th_pollen: 3.0
+  th_sum: 30.0
+  day_threshold: 3.0
+
+birch:
+  n_clinical: 5
+  window_clinical: 7
+  th_pollen: 10.0
+  th_sum: 100.0
+  day_threshold: 10.0
+
+ragweed:
+  n_clinical: 5
+  window_clinical: 7
+  th_pollen: 1.0
+  th_sum: 10.0
+  day_threshold: 1.0
+
+olive:
+  n_clinical: 5
+  window_clinical: 7
+  th_pollen: 10.0
+  th_sum: 100.0
+  day_threshold: 10.0
+
+cypress:
+  n_clinical: 5
+  window_clinical: 7
+  th_pollen: 5.0
+  th_sum: 50.0
+  day_threshold: 5.0
+
+ambrosia:
+  n_clinical: 5
+  window_clinical: 7
+  th_pollen: 1.0
+  th_sum: 10.0
+  day_threshold: 1.0
+
+
+

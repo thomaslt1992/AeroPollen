@@ -1,6 +1,7 @@
 import pandas as pd
 
 from .percentage import calculate_ps_percentage
+from .clinical import calculate_ps_clinical
 from ..preprocessing.interpolation import preprocess_pollen_timeseries
 
 
@@ -28,6 +29,7 @@ def calculate_ps(
     plot: bool = True,
     export_plot: bool = False,
     export_result: bool = False,
+    clinical_pollen_type: str | None = None,
 ):
     """
     Estimate main pollen season parameters.
@@ -82,7 +84,17 @@ def calculate_ps(
             day_threshold_value=th_day,
         )
     elif method == "clinical":
-        raise NotImplementedError("Method 'clinical' is not implemented yet.")
+        result_obj = calculate_ps_clinical(
+            dates=dates,
+            pollen_df=df[pollen_cols],
+            n_clinical=n_clinical,
+            window_clinical=window_clinical,
+            th_pollen=th_pollen,
+            th_sum=th_sum,
+            interpolation=interpolation,
+            int_method=int_method,
+            clinical_pollen_type=clinical_pollen_type,
+        )
 
     elif method == "logistic":
         raise NotImplementedError("Method 'logistic' is not implemented yet.")

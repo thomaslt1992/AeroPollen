@@ -9,5 +9,5 @@ df = pd.DataFrame({
     "Betula": np.random.randint(0, 80, 122)
 })
 
-res = calculate_ps(df, method="percentage")
+res = calculate_ps(df, method="clinical", interpolation=True, int_method="linear", n_clinical=5, window_clinical=7, th_pollen=10.0, th_sum=100.0, th_day=0.001)
 print(res)
