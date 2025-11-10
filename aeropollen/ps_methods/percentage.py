@@ -9,16 +9,75 @@ def calculate_ps_percentage(
     th_sum: int,
 ):
     """
-    5 percentage % pollen-season definition.
+    95% Percentage Method for Pollen Season Definition.
+
+    - season_start: date when cumulative sum >= 5% of total
+    - season_end:   date when cumulative sum >= perc% of total
+    - peak_date:    date with maximum daily pollen
+
+    Assumes data have already been preprocessed (sorted, optional interpolation).
+    If remaining NaNs prevent a robust season definition, the result is NA.
     """
     results = []
 
     for p_type in pollen_df.columns:
-        series = (
-            pd.to_numeric(pollen_df[p_type], errors="coerce")
-            .fillna(0)
-            .to_numpy(dtype=float)
-        )
+        series = pd.to_numeric(pollen_df[p_type], errors="coerce").to_numpy(dtype=float)
+
+        if np.all(np.isnan(series)):
+            results.append(
+                {
+                    "pollen_type": p_type,
+                    "season": np.nan,
+                    "season_start": pd.NaT,
+                    "season_end": pd.NaT,
+                    "peak_date": pd.NaT,
+                    "season_start_doy": np.nan,
+                    "season_end_doy": np.nan,
+                    "peak_doy": np.nan,
+                    "ps_length": np.nan,
+                    "pollen_integral": np.nan,
+                    "status": "excluded (all values NaN)",
+                }
+            )
+            continue
+
+        if np.isnan(series).any():
+            total_sum = np.nansum(series)
+            if total_sum < th_sum:
+                results.append(
+                    {
+                        "pollen_type": p_type,
+                        "season": np.nan,
+                        "season_start": pd.NaT,
+                        "season_end": pd.NaT,
+                        "peak_date": pd.NaT,
+                        "season_start_doy": np.nan,
+                        "season_end_doy": np.nan,
+                        "peak_doy": np.nan,
+                        "ps_length": np.nan,
+                        "pollen_integral": float(total_sum),
+                        "status": "excluded (NaNs present)",
+                    }
+                )
+                continue
+
+            results.append(
+                {
+                    "pollen_type": p_type,
+                    "season": np.nan,
+                    "season_start": pd.NaT,
+                    "season_end": pd.NaT,
+                    "peak_date": pd.NaT,
+                    "season_start_doy": np.nan,
+                    "season_end_doy": np.nan,
+                    "peak_doy": np.nan,
+                    "ps_length": np.nan,
+                    "pollen_integral": float(total_sum),
+                    "status": "excluded (NaNs prevent PS definition)",
+                }
+            )
+            continue
+
         total_sum = series.sum()
 
         if total_sum < th_sum:

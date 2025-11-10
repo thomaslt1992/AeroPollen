@@ -1,6 +1,7 @@
 import pandas as pd
 
-from aeropollen.ps_methods.percentage import calculate_ps_percentage
+from ..preprocessing.interpolation import preprocess_pollen_timeseries
+from .percentage import calculate_ps_percentage
 
 
 def calculate_ps(
@@ -32,9 +33,13 @@ def calculate_ps(
     Estimate main pollen season parameters.
 
     Interface aligned with AeRobiology::calculate_ps.
-    Currently only method='percentage' is implemented.
-    """
 
+    Currently implemented:
+    - method='percentage': 5–perc % method.
+
+    For now, only data, perc, th_sum, interpolation, int_method and maxdays
+    have an effect. Other arguments are placeholders for future methods.
+    """
     if not isinstance(data, pd.DataFrame):
         raise ValueError("data must be a pandas DataFrame")
 
@@ -47,9 +52,16 @@ def calculate_ps(
     if date_col is None:
         raise ValueError("data must contain a 'Date' column (case-insensitive).")
 
-    df = data.copy()
-    df[date_col] = pd.to_datetime(df[date_col])
-    df = df.sort_values(date_col)
+    if perc <= 5 or perc > 100:
+        raise ValueError("perc must be in (5, 100]. Typical value: 95.")
+
+    df = preprocess_pollen_timeseries(
+        data=data,
+        date_col=date_col,
+        interpolation=interpolation,
+        int_method=int_method,
+        maxdays=maxdays,
+    )
 
     dates = df[date_col]
     pollen_cols = [c for c in df.columns if c != date_col]
@@ -60,8 +72,6 @@ def calculate_ps(
     method = method.lower()
 
     if method == "percentage":
-        if perc <= 5 or perc > 100:
-            raise ValueError("perc must be in (5, 100]. Typical value: 95.")
         result_obj = calculate_ps_percentage(
             dates=dates,
             pollen_df=df[pollen_cols],
