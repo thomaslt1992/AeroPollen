@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "aeropollen"
 version = "0.1.0"
 description = "Simplified pollen-season calculator (Python version of AeRobiology)"
-authors = [{ name = "Thomas T.", email = "your_email@example.com" }]
+authors = [{ name = "Thomas Tasioulis", email = "thomas.tasioulis92@gmail.com" }]
 requires-python = ">=3.8"
 dependencies = ["pandas", "numpy"]
 
