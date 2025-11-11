@@ -30,7 +30,7 @@ def calculate_ps(
     plot: bool = True,
     export_plot: bool = False,
     export_result: bool = False,
-    clinical_pollen_type = None,
+    clinical_pollen_type: Optional[str] = None,
 ):
     """
     Estimate main pollen season parameters
