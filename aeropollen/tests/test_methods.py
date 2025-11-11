@@ -54,5 +54,5 @@ for y in years:
 df = pd.concat(dfs, ignore_index=True)
 
 # === Run clinical method on long-term series ===
-res = calculate_ps(df, method="clinical", clinical_pollen_type="olive")
+res = calculate_ps(df, method="clinical", clinical_pollen_type="cypress")
 print(res)

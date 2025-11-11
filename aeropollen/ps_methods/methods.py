@@ -1,3 +1,4 @@
+from typing import Optional
 import pandas as pd
 
 from .percentage import calculate_ps_percentage
@@ -29,7 +30,7 @@ def calculate_ps(
     plot: bool = True,
     export_plot: bool = False,
     export_result: bool = False,
-    clinical_pollen_type: str | None = None,
+    clinical_pollen_type = None,
 ):
     """
     Estimate main pollen season parameters
