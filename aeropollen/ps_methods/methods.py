@@ -33,7 +33,7 @@ def calculate_ps(
     clinical_pollen_type: Optional[str] = None,
 ):
     """
-    Estimate main pollen season parameters
+    Estimate main pollen season parameters using different methods.
     """
     if not isinstance(data, pd.DataFrame):
         raise ValueError("data must be a pandas DataFrame")
@@ -67,15 +67,14 @@ def calculate_ps(
     method = method.lower()
 
     if method == "percentage":
-        if perc <= 5 or perc > 100:
-            raise ValueError("perc must be in (5, 100]. Typical value: 95.")
         result_obj = calculate_ps_percentage(
             dates=dates,
             pollen_df=df[pollen_cols],
             perc=perc,
             th_sum=th_sum,
-            day_threshold_value=th_day,
+            day_threshold=th_day,
         )
+
     elif method == "clinical":
         result_obj = calculate_ps_clinical(
             dates=dates,
@@ -91,16 +90,13 @@ def calculate_ps(
 
     elif method == "logistic":
         raise NotImplementedError("Method 'logistic' is not implemented yet.")
-
     elif method == "moving":
         raise NotImplementedError("Method 'moving' is not implemented yet.")
-
     elif method == "grains":
         raise NotImplementedError("Method 'grains' is not implemented yet.")
-
     else:
         raise ValueError(
-            "Unknown method. Supported now: 'percentage',clinical'. "
+            "Unknown method. Supported now: 'percentage', 'clinical'. "
             "Planned: 'logistic', 'moving', 'grains'."
         )
 

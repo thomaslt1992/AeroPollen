@@ -121,7 +121,7 @@ def calculate_ps_clinical(
                 "ps_end_doy",
                 "peak_doy",
                 "ps_length",
-                "pollen_integral",
+                "pollen_season_integral",
                 "total_pollen_integral",
                 "day_threshold",
             ]
@@ -171,7 +171,7 @@ def calculate_ps_clinical(
                         "ps_end_doy": np.nan,
                         "peak_doy": np.nan,
                         "ps_length": np.nan,
-                        "pollen_integral": np.nan,
+                        "pollen_season_integral": np.nan,
                         "total_pollen_integral": np.nan,
                         "day_threshold": np.nan,
                     }
@@ -215,7 +215,7 @@ def calculate_ps_clinical(
                         "ps_end_doy": np.nan,
                         "peak_doy": int(peak_doy) if not np.isnan(peak_doy) else np.nan,
                         "ps_length": np.nan,
-                        "pollen_integral": np.nan,
+                        "pollen_season_integral": np.nan,
                         "total_pollen_integral": total_integral,
                         "day_threshold": (
                             int(day_threshold_count)
@@ -247,7 +247,7 @@ def calculate_ps_clinical(
                     "ps_end_doy": end_doy,
                     "peak_doy": peak_doy_int,
                     "ps_length": ps_length,
-                    "pollen_integral": season_integral,
+                    "pollen_season_integral": season_integral,
                     "total_pollen_integral": total_integral,
                     "day_threshold": day_threshold_count,
                 }
