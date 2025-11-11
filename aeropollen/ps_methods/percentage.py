@@ -90,7 +90,6 @@ def calculate_ps_percentage(
                 }
             )
 
-    # Convert to DataFrame
     return_df = pd.DataFrame(results)
 
     # Column type cleanup
