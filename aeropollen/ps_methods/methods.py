@@ -24,7 +24,7 @@ def calculate_ps(
     th_sum: int = 100,
     season_type: str = "none",
     interpolation: bool = True,
-    int_method: str = "lineal",
+    int_method: str = "linear",
     maxdays: int = 30,
     result: str = "table",
     plot: bool = True,
@@ -34,10 +34,13 @@ def calculate_ps(
 ):
     """
     Estimate main pollen season parameters using different methods.
+
+    Supports 'percentage' and 'clinical' methods with unified interpolation logic.
     """
     if not isinstance(data, pd.DataFrame):
         raise ValueError("data must be a pandas DataFrame")
 
+    # detect date column (case-insensitive)
     date_col = None
     for col in data.columns:
         if col.lower() == "date":
@@ -50,6 +53,7 @@ def calculate_ps(
     if perc <= 5 or perc > 100:
         raise ValueError("perc must be in (5, 100]. Typical value: 95.")
 
+    # preprocess (fills missing days, applies interpolation if requested)
     df = preprocess_pollen_timeseries(
         data=data,
         date_col=date_col,
@@ -73,6 +77,8 @@ def calculate_ps(
             perc=perc,
             th_sum=th_sum,
             day_threshold=th_day,
+            interpolation=interpolation,
+            int_method=int_method,
         )
 
     elif method == "clinical":
@@ -88,12 +94,9 @@ def calculate_ps(
             clinical_pollen_type=clinical_pollen_type,
         )
 
-    elif method == "logistic":
-        raise NotImplementedError("Method 'logistic' is not implemented yet.")
-    elif method == "moving":
-        raise NotImplementedError("Method 'moving' is not implemented yet.")
-    elif method == "grains":
-        raise NotImplementedError("Method 'grains' is not implemented yet.")
+    elif method in {"logistic", "moving", "grains"}:
+        raise NotImplementedError(f"Method '{method}' is not implemented yet.")
+
     else:
         raise ValueError(
             "Unknown method. Supported now: 'percentage', 'clinical'. "

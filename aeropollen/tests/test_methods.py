@@ -54,5 +54,15 @@ for y in years:
 df = pd.concat(dfs, ignore_index=True)
 
 # === Run clinical method on long-term series ===
-res = calculate_ps(df, method="percentage")
+res = calculate_ps(df, method="clinical",clinical_pollen_type="grass")
+
+print(res)
+res = calculate_ps(
+    df,
+    method="percentage",
+    perc=95,
+    th_day=5,
+    interpolation=True,
+    int_method="linear"
+)
 print(res)

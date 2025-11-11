@@ -43,3 +43,30 @@ def preprocess_pollen_timeseries(
         )
 
     return df.reset_index()
+
+
+def _maybe_interpolate(
+    s: pd.Series,
+    interpolation: bool,
+    int_method: str,
+) -> pd.Series:
+    """
+    Apply interpolation to a single pandas Series if enabled.
+    Mirrors the logic of preprocess_pollen_timeseries for consistency.
+    """
+    if not interpolation:
+        return s
+
+    method = int_method.lower()
+    if method == "lineal":
+        method = "linear"
+
+    if method not in {"linear"}:
+        raise ValueError("int_method must be 'lineal' or 'linear' for now.")
+
+    s = pd.to_numeric(s, errors="coerce")
+
+    return s.interpolate(
+        method=method,
+        limit_direction="both",
+    )
