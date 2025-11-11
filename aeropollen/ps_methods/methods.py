@@ -99,8 +99,8 @@ def calculate_ps(
 
     else:
         raise ValueError(
-            "Unknown method. Supported now: 'percentage'. "
-            "Planned: 'clinical', 'logistic', 'moving', 'grains'."
+            "Unknown method. Supported now: 'percentage',clinical'. "
+            "Planned: 'logistic', 'moving', 'grains'."
         )
 
     if result == "table":
