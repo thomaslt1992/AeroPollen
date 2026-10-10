@@ -94,13 +94,13 @@ def calculate_ps(
             clinical_pollen_type=clinical_pollen_type,
         )
 
-    elif method in {"logistic", "moving", "grains"}:
+    elif method in {"moving", "grains"}:
         raise NotImplementedError(f"Method '{method}' is not implemented yet.")
 
     else:
         raise ValueError(
             "Unknown method. Supported now: 'percentage', 'clinical'. "
-            "Planned: 'logistic', 'moving', 'grains'."
+            "Planned: 'moving', 'grains'."
         )
 
     if result == "table":
