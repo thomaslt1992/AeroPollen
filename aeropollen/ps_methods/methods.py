@@ -2,6 +2,7 @@ import pandas as pd
 
 from ..preprocessing.interpolation import preprocess_pollen_timeseries
 from .clinical import calculate_ps_clinical
+from .grains import calculate_ps_grains
 from .percentage import calculate_ps_percentage
 
 
@@ -34,7 +35,8 @@ def calculate_ps(
     """
     Estimate main pollen season parameters using different methods.
 
-    Supports 'percentage' and 'clinical' methods with unified interpolation logic.
+    Supports 'percentage', 'clinical', and 'grains' methods with unified
+    interpolation logic.
     """
     if not isinstance(data, pd.DataFrame):
         raise TypeError("data must be a pandas DataFrame")
@@ -42,8 +44,8 @@ def calculate_ps(
     method = method.lower().strip()
     if method not in {"percentage", "clinical", "moving", "grains"}:
         raise ValueError(
-            "Unknown method. Supported now: 'percentage', 'clinical'. "
-            "Planned: 'moving', 'grains'."
+            "Unknown method. Supported now: 'percentage', 'clinical', 'grains'. "
+            "Planned: 'moving'."
         )
     if result not in {"table", "list"}:
         raise ValueError("result must be 'table' or 'list'.")
@@ -97,7 +99,16 @@ def calculate_ps(
             clinical_pollen_type=clinical_pollen_type,
         )
 
-    elif method in {"moving", "grains"}:
+    elif method == "grains":
+        result_obj = calculate_ps_grains(
+            dates=dates,
+            pollen_df=df[pollen_cols],
+            window_grains=window_grains,
+            th_pollen=th_pollen,
+            day_threshold=th_day,
+        )
+
+    elif method == "moving":
         raise NotImplementedError(f"Method '{method}' is not implemented yet.")
 
     if result == "table":

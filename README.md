@@ -71,6 +71,31 @@ Run the included example with:
 python examples/clinical_tryout.py
 ```
 
+## Grains method
+
+The grains method defines the season from the first day of the first qualifying
+run to the final day of the last qualifying run. Every day in a run must be at
+or above `th_pollen`, and each run must contain at least `window_grains`
+consecutive calendar days. Missing values break a run.
+
+```python
+result = calculate_ps(
+    data[["date", "Poaceae"]],
+    method="grains",
+    window_grains=3,
+    th_pollen=2,
+    interpolation=True,
+    int_method="linear",
+    maxdays=30,
+)
+```
+
+Run the included example with:
+
+```bash
+python examples/grains_tryout.py
+```
+
 ## Development checks
 
 ```bash
