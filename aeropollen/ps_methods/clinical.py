@@ -20,7 +20,6 @@ def _maybe_interpolate(
 ) -> pd.Series:
     if not interpolation:
         return s
-
     method = int_method or "linear"
     if method == "linear":
         return s.interpolate(method="linear")
