@@ -1,15 +1,14 @@
-from typing import Optional
 import pandas as pd
 
-from .percentage import calculate_ps_percentage
-from .clinical import calculate_ps_clinical
 from ..preprocessing.interpolation import preprocess_pollen_timeseries
+from .clinical import calculate_ps_clinical
+from .percentage import calculate_ps_percentage
 
 
 def calculate_ps(
     data: pd.DataFrame,
     method: str = "percentage",
-    th_day: int = 100,
+    th_day: float = 100,
     perc: float = 95,
     def_season: str = "natural",
     reduction: bool = False,
@@ -20,8 +19,8 @@ def calculate_ps(
     n_clinical: int = 5,
     window_clinical: int = 7,
     window_grains: int = 5,
-    th_pollen: int = 10,
-    th_sum: int = 100,
+    th_pollen: float = 10,
+    th_sum: float = 100,
     season_type: str = "none",
     interpolation: bool = True,
     int_method: str = "linear",
@@ -30,7 +29,7 @@ def calculate_ps(
     plot: bool = True,
     export_plot: bool = False,
     export_result: bool = False,
-    clinical_pollen_type: Optional[str] = None,
+    clinical_pollen_type: str | None = None,
 ):
     """
     Estimate main pollen season parameters using different methods.
@@ -38,22 +37,29 @@ def calculate_ps(
     Supports 'percentage' and 'clinical' methods with unified interpolation logic.
     """
     if not isinstance(data, pd.DataFrame):
-        raise ValueError("data must be a pandas DataFrame")
+        raise TypeError("data must be a pandas DataFrame")
 
-    # detect date column (case-insensitive)
+    method = method.lower().strip()
+    if method not in {"percentage", "clinical", "moving", "grains"}:
+        raise ValueError(
+            "Unknown method. Supported now: 'percentage', 'clinical'. "
+            "Planned: 'moving', 'grains'."
+        )
+    if result not in {"table", "list"}:
+        raise ValueError("result must be 'table' or 'list'.")
+
     date_col = None
     for col in data.columns:
-        if col.lower() == "date":
+        if str(col).lower() == "date":
             date_col = col
             break
 
     if date_col is None:
         raise ValueError("data must contain a 'Date' column (case-insensitive).")
 
-    if perc <= 5 or perc > 100:
+    if method == "percentage" and (perc <= 5 or perc > 100):
         raise ValueError("perc must be in (5, 100]. Typical value: 95.")
 
-    # preprocess (fills missing days, applies interpolation if requested)
     df = preprocess_pollen_timeseries(
         data=data,
         date_col=date_col,
@@ -68,8 +74,6 @@ def calculate_ps(
     if not pollen_cols:
         raise ValueError("data must have at least one pollen column besides 'Date'.")
 
-    method = method.lower()
-
     if method == "percentage":
         result_obj = calculate_ps_percentage(
             dates=dates,
@@ -77,7 +81,7 @@ def calculate_ps(
             perc=perc,
             th_sum=th_sum,
             day_threshold=th_day,
-            interpolation=interpolation,
+            interpolation=False,
             int_method=int_method,
         )
 
@@ -89,23 +93,14 @@ def calculate_ps(
             window_clinical=window_clinical,
             th_pollen=th_pollen,
             th_sum=th_sum,
-            interpolation=interpolation,
-            int_method=int_method,
+            day_threshold=th_day,
             clinical_pollen_type=clinical_pollen_type,
         )
 
     elif method in {"moving", "grains"}:
         raise NotImplementedError(f"Method '{method}' is not implemented yet.")
 
-    else:
-        raise ValueError(
-            "Unknown method. Supported now: 'percentage', 'clinical'. "
-            "Planned: 'moving', 'grains'."
-        )
-
     if result == "table":
         return pd.DataFrame(result_obj)
     if result == "list":
         return result_obj
-
-    raise ValueError("result must be 'table' or 'list'.")
