@@ -221,7 +221,8 @@ def calculate_ps_clinical(
                             int(day_threshold_count)
                             if not np.isnan(day_threshold_count)
                             else np.nan
-                        ),
+                        )
+                        "method": "Clinical",
                     }
                 )
                 continue
