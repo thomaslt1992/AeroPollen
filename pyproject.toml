@@ -11,7 +11,7 @@ license = "Unlicense"
 license-files = ["LICENSE"]
 authors = [{ name = "Thomas Tasioulis", email = "thomas.tasioulis92@gmail.com" }]
 requires-python = ">=3.10"
-keywords = ["aerobiology", "pollen", "pollen season", "phenology"]
+keywords = ["aerobiology", "pollen", "pollen season"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
