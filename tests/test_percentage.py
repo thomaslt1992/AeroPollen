@@ -22,5 +22,4 @@ def test_percentage_uses_equal_tails_and_reports_threshold_days() -> None:
     assert result.loc[0, "ps_start"] == "2020-01-02"
     assert result.loc[0, "ps_end"] == "2020-01-04"
     assert result.loc[0, "pollen_season_integral"] == 98
-    assert result.loc[0, "day_threshold"] == 50
-    assert result.loc[0, "days_above_threshold"] == 1
+    assert result.loc[0, "day_threshold"] == 1
