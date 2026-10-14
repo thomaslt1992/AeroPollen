@@ -1,125 +1,105 @@
+from typing import Any
+
 import numpy as np
 import pandas as pd
-from typing import Any, Dict, List, Optional
+
 from ..preprocessing.interpolation import _maybe_interpolate
+from .common import RESULT_COLUMNS, empty_result, format_results
 
 
 def calculate_ps_percentage(
     dates: pd.Series,
     pollen_df: pd.DataFrame,
     perc: float,
-    th_sum: int,
-    day_threshold: Optional[int] = None,
+    day_threshold: float = 100,
     interpolation: bool = True,
     int_method: str = "linear",
 ) -> pd.DataFrame:
-    """
-    Percentage-based pollen-season definition (per year).
-
-    Defines the season between 5% and `perc`% of the annual cumulative sum,
-    for each pollen type and each year. Skips years with total pollen below
-    `th_sum` or seasons shorter than `day_threshold` (if provided).
-    Optionally interpolates missing values using `_maybe_interpolate`.
-    """
-
-    dates = pd.to_datetime(dates)
-
-    if len(dates) == 0 or pollen_df.empty:
-        return pd.DataFrame()
-
-    if len(dates) != len(pollen_df):
+    """Calculate seasons containing the central ``perc`` percent of pollen."""
+    parsed_dates = pd.to_datetime(dates, errors="raise")
+    if len(parsed_dates) != len(pollen_df):
         raise ValueError("Length of dates and pollen_df must match.")
+    if parsed_dates.isna().any():
+        raise ValueError("dates must not contain missing values.")
+    if parsed_dates.duplicated().any():
+        raise ValueError("dates must contain unique values.")
+    if len(parsed_dates) == 0 or pollen_df.empty:
+        return pd.DataFrame(columns=RESULT_COLUMNS)
 
-    results: List[Dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
+    tail_fraction = (100.0 - float(perc)) / 200.0
 
-    for p_type in pollen_df.columns:
-        # Prepare and interpolate
-        s = pd.to_numeric(pollen_df[p_type], errors="coerce")
-        s.index = dates
-        s = _maybe_interpolate(s, interpolation=interpolation, int_method=int_method)
+    for pollen_type in pollen_df.columns:
+        values = pd.to_numeric(pollen_df[pollen_type], errors="coerce")
+        values.index = parsed_dates
+        values = _maybe_interpolate(
+            values,
+            interpolation=interpolation,
+            int_method=int_method,
+        )
+        time_series = pd.DataFrame(
+            {"date": values.index, "value": values.to_numpy()}
+        ).sort_values("date")
+        time_series = time_series.set_index("date")
 
-        tmp = pd.DataFrame({"date": s.index, "value": s.values}).set_index("date").sort_index()
+        for season_year, group in time_series.groupby(time_series.index.year):
+            series = group["value"].to_numpy(dtype="float64")
+            year_dates = group.index
+            finite = np.isfinite(series)
+            days_above = int(np.sum(finite & (series >= float(day_threshold))))
 
-        for year, g in tmp.groupby(tmp.index.year):
-            vals = g["value"].to_numpy(dtype="float64")
-            year_dates = g.index
-
-            if len(vals) == 0:
-                results.append(_empty_result(p_type, year))
+            if not finite.any():
+                results.append(
+                    empty_result(
+                        pollen_type,
+                        int(season_year),
+                        day_threshold=float(day_threshold),
+                    )
+                )
                 continue
 
-            total_integral = float(np.nansum(vals))
-            if not np.isfinite(total_integral) or total_integral < th_sum:
-                results.append(_empty_result(p_type, year, total_integral))
+            total_integral = float(np.nansum(series))
+            peak_idx = int(np.nanargmax(series))
+            peak_date = year_dates[peak_idx]
+            if total_integral <= 0:
+                results.append(
+                    empty_result(
+                        pollen_type,
+                        int(season_year),
+                        day_threshold=float(day_threshold),
+                        peak_date=peak_date,
+                        total_integral=total_integral,
+                        days_above_threshold=days_above,
+                    )
+                )
                 continue
 
-            cumsum = np.cumsum(np.nan_to_num(vals, nan=0.0))
-            start_threshold = total_integral * 0.05
-            end_threshold = total_integral * (perc / 100.0)
-
-            start_idx = int(np.argmax(cumsum >= start_threshold))
-            end_idx = int(np.argmax(cumsum >= end_threshold))
-
+            cumulative = np.cumsum(np.nan_to_num(series, nan=0.0))
+            start_idx = int(np.argmax(cumulative >= total_integral * tail_fraction))
+            end_candidates = np.flatnonzero(
+                cumulative > total_integral * (1.0 - tail_fraction)
+            )
+            end_idx = int(end_candidates[0]) if end_candidates.size else len(series) - 1
             start_date = year_dates[start_idx]
             end_date = year_dates[end_idx]
-            ps_length = int((end_date - start_date).days + 1)
-
-            if day_threshold is not None and ps_length < day_threshold:
-                results.append(_empty_result(p_type, year, total_integral))
-                continue
-
-            peak_idx = int(np.nanargmax(vals)) if np.any(~np.isnan(vals)) else None
-            peak_date = year_dates[peak_idx] if peak_idx is not None else pd.NaT
-
-            season_integral = float(np.nansum(vals[start_idx : end_idx + 1]))
 
             results.append(
                 {
-                    "pollen_type": p_type,
-                    "season": int(year),
+                    "pollen_type": pollen_type,
+                    "season": int(season_year),
                     "ps_start": start_date,
                     "ps_end": end_date,
                     "peak_date": peak_date,
                     "ps_start_doy": int(start_date.dayofyear),
                     "ps_end_doy": int(end_date.dayofyear),
-                    "peak_doy": int(peak_date.dayofyear) if pd.notna(peak_date) else np.nan,
-                    "ps_length": ps_length,
-                    "pollen_season_integral": season_integral,
-                    "total_pollen_integral": np.nan if total_integral == 0 else total_integral,
-                    "day_threshold": day_threshold if day_threshold is not None else np.nan,
+                    "peak_doy": int(peak_date.dayofyear),
+                    "ps_length": int((end_date - start_date).days + 1),
+                    "pollen_season_integral": float(
+                        np.nansum(series[start_idx : end_idx + 1])
+                    ),
+                    "total_pollen_integral": total_integral,
+                    "day_threshold": days_above,
                 }
             )
 
-    return_df = pd.DataFrame(results)
-
-    # Column type cleanup
-    date_cols = ["ps_start", "ps_end", "peak_date"]
-    int_cols = ["ps_start_doy", "ps_end_doy", "peak_doy", "ps_length", "day_threshold"]
-
-    for col in int_cols:
-        if col in return_df:
-            return_df[col] = return_df[col].astype("Int64")
-
-    for col in date_cols:
-        if col in return_df:
-            return_df[col] = pd.to_datetime(return_df[col], errors="coerce").dt.strftime("%Y-%m-%d")
-
-    return return_df
-
-
-def _empty_result(p_type: str, year: int, total_integral: float = np.nan) -> Dict[str, Any]:
-    """Return an empty-row dictionary for consistency with output schema."""
-    return {
-        "pollen_type": p_type,
-        "season": int(year),
-        "ps_start": pd.NaT,
-        "ps_end": pd.NaT,
-        "peak_date": pd.NaT,
-        "ps_start_doy": np.nan,
-        "ps_end_doy": np.nan,
-        "peak_doy": np.nan,
-        "ps_length": np.nan,
-        "pollen_season_integral": np.nan,
-        "total_pollen_integral": total_integral,
-        "day_threshold": np.nan,
-    }
+    return format_results(results)

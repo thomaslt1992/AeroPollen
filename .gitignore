@@ -3,6 +3,14 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Build and test artifacts
+*.egg-info/
+.coverage
+.pytest_cache/
+.ruff_cache/
+.venv/
+build/
+dist/
 
 # Jupyter notebooks
 .ipynb_checkpoints
@@ -12,3 +20,4 @@ __pypackages__/
 
 # Local project notes
 notes.md
+*.ipynb
