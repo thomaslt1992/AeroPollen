@@ -7,7 +7,7 @@ import yaml
 from .common import RESULT_COLUMNS, empty_result, format_results
 
 CLINICAL_POLLEN_ALIASES = {"grass": "grasses", "poac": "grasses", "poaceae": "grasses", "betula": "birch"}
-PPP_COLUMNS = ["Year", "start_doy", "end_doy", "ppp_length", "PPP", "total_ppp_seasons"]
+PPP_COLUMNS = ["Year", "ppp_start_doy", "ppp_end_doy", "ppp_length", "PPP", "total_ppp_seasons"]
 
 
 def load_clinical_cfg(path: str | Path | None = None) -> dict[str, dict[str, object]]:
@@ -182,8 +182,8 @@ def _peak_pollen_periods(
         lengths.append(int(right - left))
 
     return {
-        "start_doy": starts,
-        "end_doy": ends,
+        "ppp_start_doy": starts,
+        "ppp_end_doy": ends,
         "ppp_length": lengths,
         "PPP": sum(lengths),
         "total_ppp_seasons": len(lengths),
@@ -234,8 +234,8 @@ def calculate_ps_clinical(
             finite = np.isfinite(series)
             ppp_empty = {
                 "Year": int(season_year),
-                "start_doy": [],
-                "end_doy": [],
+                "ppp_start_doy": [],
+                "ppp_end_doy": [],
                 "ppp_length": [],
                 "PPP": 0,
                 "total_ppp_seasons": 0,
