@@ -1,10 +1,9 @@
 from numbers import Integral, Real
-from typing import Any
 
 import numpy as np
 import pandas as pd
 
-from .clinical import RESULT_COLUMNS
+from .common import RESULT_COLUMNS, empty_result, format_results
 
 
 def _validate_grains_params(
@@ -58,32 +57,6 @@ def _grains_bounds(
     return start_idx, end_idx
 
 
-def _empty_result(
-    pollen_type: str,
-    season: int,
-    *,
-    day_threshold: float,
-    peak_date: Any = pd.NaT,
-    total_integral: float = np.nan,
-    days_above_threshold: int = 0,
-) -> dict[str, Any]:
-    return {
-        "pollen_type": pollen_type,
-        "season": season,
-        "ps_start": pd.NaT,
-        "ps_end": pd.NaT,
-        "peak_date": peak_date,
-        "ps_start_doy": np.nan,
-        "ps_end_doy": np.nan,
-        "peak_doy": peak_date.dayofyear if pd.notna(peak_date) else np.nan,
-        "ps_length": np.nan,
-        "pollen_season_integral": np.nan,
-        "total_pollen_integral": total_integral,
-        "day_threshold": day_threshold,
-        "days_above_threshold": days_above_threshold,
-    }
-
-
 def calculate_ps_grains(
     dates: pd.Series,
     pollen_df: pd.DataFrame,
@@ -114,7 +87,7 @@ def calculate_ps_grains(
     if len(parsed_dates) == 0 or pollen_df.empty:
         return pd.DataFrame(columns=RESULT_COLUMNS)
 
-    results: list[dict[str, Any]] = []
+    results: list[dict[str, object]] = []
     for pollen_type in pollen_df.columns:
         values = pd.to_numeric(pollen_df[pollen_type], errors="coerce")
         time_series = pd.DataFrame(
@@ -134,7 +107,7 @@ def calculate_ps_grains(
 
             if not finite.any():
                 results.append(
-                    _empty_result(
+                    empty_result(
                         pollen_type,
                         int(season_year),
                         day_threshold=float(day_threshold),
@@ -153,7 +126,7 @@ def calculate_ps_grains(
 
             if start_idx is None or end_idx is None:
                 results.append(
-                    _empty_result(
+                    empty_result(
                         pollen_type,
                         int(season_year),
                         day_threshold=float(day_threshold),
@@ -186,17 +159,4 @@ def calculate_ps_grains(
                 }
             )
 
-    result = pd.DataFrame(results, columns=RESULT_COLUMNS)
-    for column in (
-        "ps_start_doy",
-        "ps_end_doy",
-        "peak_doy",
-        "ps_length",
-        "days_above_threshold",
-    ):
-        result[column] = result[column].astype("Int64")
-    for column in ("ps_start", "ps_end", "peak_date"):
-        result[column] = pd.to_datetime(result[column], errors="coerce").dt.strftime(
-            "%Y-%m-%d"
-        )
-    return result
+    return format_results(results)

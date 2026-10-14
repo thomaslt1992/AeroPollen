@@ -3,6 +3,7 @@ import pandas as pd
 from ..preprocessing.interpolation import preprocess_pollen_timeseries
 from .clinical import calculate_ps_clinical
 from .grains import calculate_ps_grains
+from .moving import calculate_ps_moving
 from .percentage import calculate_ps_percentage
 
 
@@ -35,7 +36,7 @@ def calculate_ps(
     """
     Estimate main pollen season parameters using different methods.
 
-    Supports 'percentage', 'clinical', and 'grains' methods with unified
+    Supports 'percentage', 'moving', 'clinical', and 'grains' methods with unified
     interpolation logic.
     """
     if not isinstance(data, pd.DataFrame):
@@ -44,8 +45,8 @@ def calculate_ps(
     method = method.lower().strip()
     if method not in {"percentage", "clinical", "moving", "grains"}:
         raise ValueError(
-            "Unknown method. Supported now: 'percentage', 'clinical', 'grains'. "
-            "Planned: 'moving'."
+            "Unknown method. Supported methods: 'percentage', 'moving', "
+            "'clinical', and 'grains'."
         )
     if result not in {"table", "list"}:
         raise ValueError("result must be 'table' or 'list'.")
@@ -81,10 +82,18 @@ def calculate_ps(
             dates=dates,
             pollen_df=df[pollen_cols],
             perc=perc,
-            th_sum=th_sum,
             day_threshold=th_day,
             interpolation=False,
             int_method=int_method,
+        )
+
+    elif method == "moving":
+        result_obj = calculate_ps_moving(
+            dates=dates,
+            pollen_df=df[pollen_cols],
+            man=man,
+            th_ma=th_ma,
+            day_threshold=th_day,
         )
 
     elif method == "clinical":
@@ -107,9 +116,6 @@ def calculate_ps(
             th_pollen=th_pollen,
             day_threshold=th_day,
         )
-
-    elif method == "moving":
-        raise NotImplementedError(f"Method '{method}' is not implemented yet.")
 
     if result == "table":
         return pd.DataFrame(result_obj)

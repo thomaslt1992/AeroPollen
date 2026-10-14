@@ -96,6 +96,34 @@ Run the included example with:
 python examples/grains_tryout.py
 ```
 
+## Moving method
+
+The moving method applies a centered moving average and defines the season as
+the interval surrounding its peak where the average remains at or above
+`th_ma`. Following AeRobiology, an even `man` value is increased to the next odd
+window size.
+
+```python
+result = calculate_ps(
+    data[["date", "Poaceae"]],
+    method="moving",
+    man=7,
+    th_ma=4,
+    interpolation=True,
+    int_method="linear",
+    maxdays=30,
+)
+```
+
+Run the included example with:
+
+```bash
+python examples/moving_tryout.py
+```
+
+All implemented methods return the same ordered columns. Their season dates and
+calculated values differ according to the selected method.
+
 ## Development checks
 
 ```bash
