@@ -107,3 +107,50 @@ def test_invalid_clinical_window_is_rejected() -> None:
             n_clinical=6,
             window_clinical=5,
         )
+
+
+@pytest.mark.parametrize(
+    ("species", "threshold"),
+    [
+        ("birch", 100),
+        ("grasses", 50),
+        ("ragweed", 50),
+        ("olive", 100),
+        ("cypress", 100),
+    ],
+)
+def test_ppp_uses_yaml_threshold_and_five_consecutive_days(species, threshold):
+    data = pd.DataFrame({
+        "Date": pd.date_range("2020-01-01", periods=24),
+        species: [0] + [threshold] * 4 + [0] + [threshold] * 5
+        + [0] * 3 + [threshold] * 6 + [0] * 4,
+    })
+    result = calculate_ps(
+        data,
+        method="clinical",
+        clinical_pollen_type=species,
+        th_day=9999,
+        interpolation=False,
+    )
+    row = result.iloc[0]
+    assert row["day_threshold"] == threshold
+    assert row["start_doy"] == [7, 15]
+    assert row["end_doy"] == [11, 20]
+    assert row["ppp_length"] == [5, 6]
+    assert row["PPP"] == 11
+    assert row["total_ppp_seasons"] == 2
+
+
+def test_ppp_auto_resolves_each_species_from_yaml():
+    dates = pd.date_range("2020-01-01", periods=15)
+    data = pd.DataFrame({
+        "Date": dates,
+        "birch": [0] + [100] * 10 + [0] * 4,
+        "ragweed": [0] + [50] * 10 + [0] * 4,
+    })
+    result = calculate_ps(data, method="clinical", th_day=5000, interpolation=False)
+    assert dict(zip(result["pollen_type"], result["day_threshold"])) == {
+        "birch": 100,
+        "ragweed": 50,
+    }
+    assert result["PPP"].tolist() == [10, 10]
