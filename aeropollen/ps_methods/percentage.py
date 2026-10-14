@@ -98,8 +98,7 @@ def calculate_ps_percentage(
                         np.nansum(series[start_idx : end_idx + 1])
                     ),
                     "total_pollen_integral": total_integral,
-                    "day_threshold": float(day_threshold),
-                    "days_above_threshold": days_above,
+                    "day_threshold": days_above,
                 }
             )
 
