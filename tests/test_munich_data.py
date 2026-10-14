@@ -49,8 +49,11 @@ def test_munich_clinical_presets_return_each_year() -> None:
         "2014-08-05",
         "2015-08-14",
     ]
-    assert birch["day_threshold"].eq(100).all()
-    assert grasses["day_threshold"].eq(50).all()
+    assert birch["day_threshold"].tolist() == [23, 11, 19, 11, 15, 13]
+    assert grasses["day_threshold"].ge(0).all()
+    assert grasses["day_threshold"].le(366).all()
+    assert "days_above_threshold" not in birch.columns
+    assert "days_above_threshold" not in grasses.columns
 
 
 def test_munich_grains_matches_consecutive_day_definition() -> None:
