@@ -96,7 +96,7 @@ def test_all_missing_year_returns_empty_season() -> None:
 
 
 def test_invalid_clinical_window_is_rejected() -> None:
-    data = pollen_frame([10.0] * 7)
+    data = pollen_frame([10.0] * 7).rename(columns={"Poaceae": "custom_pollen"})
 
     with pytest.raises(ValueError, match="cannot exceed"):
         calculate_ps(
