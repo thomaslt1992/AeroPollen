@@ -48,7 +48,9 @@ def test_grass_alias_matches_grasses_preset() -> None:
 
 
 def test_manual_clinical_parameters_are_applied_without_preset() -> None:
-    data = pollen_frame([0, 10, 10, 10, 10, 10, 0, 0]).rename(columns={"Poaceae": "custom_pollen"})
+    data = pollen_frame([0, 10, 10, 10, 10, 10, 0, 0]).rename(
+        columns={"Poaceae": "custom_pollen"}
+    )
 
     result = calculate_ps(
         data,
@@ -118,11 +120,18 @@ def test_invalid_clinical_window_is_rejected() -> None:
     ],
 )
 def test_ppp_uses_yaml_threshold_and_five_consecutive_days(species, threshold):
-    data = pd.DataFrame({
-        "Date": pd.date_range("2020-01-01", periods=24),
-        species: [0] + [threshold] * 4 + [0] + [threshold] * 5
-        + [0] * 3 + [threshold] * 6 + [0] * 4,
-    })
+    data = pd.DataFrame(
+        {
+            "Date": pd.date_range("2020-01-01", periods=24),
+            species: [0]
+            + [threshold] * 4
+            + [0]
+            + [threshold] * 5
+            + [0] * 3
+            + [threshold] * 6
+            + [0] * 4,
+        }
+    )
     result = calculate_ps(
         data,
         method="clinical",
@@ -141,11 +150,13 @@ def test_ppp_uses_yaml_threshold_and_five_consecutive_days(species, threshold):
 
 def test_ppp_auto_resolves_each_species_from_yaml():
     dates = pd.date_range("2020-01-01", periods=15)
-    data = pd.DataFrame({
-        "Date": dates,
-        "birch": [0] + [100] * 10 + [0] * 4,
-        "ragweed": [0] + [50] * 10 + [0] * 4,
-    })
+    data = pd.DataFrame(
+        {
+            "Date": dates,
+            "birch": [0] + [100] * 10 + [0] * 4,
+            "ragweed": [0] + [50] * 10 + [0] * 4,
+        }
+    )
     result = calculate_ps(data, method="clinical", th_day=5000, interpolation=False)
     assert dict(zip(result["pollen_type"], result["day_threshold"])) == {
         "birch": 10,

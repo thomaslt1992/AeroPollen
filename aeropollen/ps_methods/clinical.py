@@ -6,7 +6,12 @@ import yaml
 
 from .common import RESULT_COLUMNS, empty_result, format_results
 
-CLINICAL_POLLEN_ALIASES = {"grass": "grasses", "poac": "grasses", "poaceae": "grasses", "betula": "birch"}
+CLINICAL_POLLEN_ALIASES = {
+    "grass": "grasses",
+    "poac": "grasses",
+    "poaceae": "grasses",
+    "betula": "birch",
+}
 PPP_COLUMNS = ["ppp_start_doy", "ppp_end_doy", "ppp_length", "PPP", "total_ppp_seasons"]
 
 
@@ -244,14 +249,16 @@ def calculate_ps_clinical(
             )
 
             if not finite.any():
-                results.append({
-                    **empty_result(
-                        pollen_type,
-                        int(season_year),
-                        day_threshold=float(params["day_threshold"]),
-                    ),
-                    **ppp_empty,
-                })
+                results.append(
+                    {
+                        **empty_result(
+                            pollen_type,
+                            int(season_year),
+                            day_threshold=float(params["day_threshold"]),
+                        ),
+                        **ppp_empty,
+                    }
+                )
                 continue
 
             total_integral = float(np.nansum(series))
@@ -266,17 +273,19 @@ def calculate_ps_clinical(
             )
 
             if start_idx is None or end_idx is None:
-                results.append({
-                    **empty_result(
-                        pollen_type,
-                        int(season_year),
-                        day_threshold=float(params["day_threshold"]),
-                        peak_date=peak_date,
-                        total_integral=total_integral,
-                        days_above_threshold=days_above,
-                    ),
-                    **ppp_empty,
-                })
+                results.append(
+                    {
+                        **empty_result(
+                            pollen_type,
+                            int(season_year),
+                            day_threshold=float(params["day_threshold"]),
+                            peak_date=peak_date,
+                            total_integral=total_integral,
+                            days_above_threshold=days_above,
+                        ),
+                        **ppp_empty,
+                    }
+                )
                 continue
 
             ppp = _peak_pollen_periods(
@@ -291,7 +300,7 @@ def calculate_ps_clinical(
             results.append(
                 {
                     **ppp,
-                        "pollen_type": pollen_type,
+                    "pollen_type": pollen_type,
                     "season": int(season_year),
                     "ps_start": start_date,
                     "ps_end": end_date,

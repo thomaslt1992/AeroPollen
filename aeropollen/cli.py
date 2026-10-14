@@ -16,11 +16,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--input", "-i", type=Path, required=True)
     parser.add_argument("--output", "-o", type=Path)
     parser.add_argument(
-        "--method", choices=("percentage", "clinical", "moving", "grains"),
+        "--method",
+        choices=("percentage", "clinical", "moving", "grains"),
         default="percentage",
     )
     parser.add_argument(
-        "--species", nargs="+", metavar="COLUMN",
+        "--species",
+        nargs="+",
+        metavar="COLUMN",
         help="Pollen column names to analyze (default: all non-date columns).",
     )
     parser.add_argument("--date-column", default="date")
@@ -34,10 +37,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--n-clinical", type=int, default=5)
     parser.add_argument("--window-clinical", type=int, default=7)
     parser.add_argument("--th-sum", type=float, default=100)
-    parser.add_argument("--interpolation", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument(
+        "--interpolation", action=argparse.BooleanOptionalAction, default=True
+    )
     parser.add_argument("--int-method", default="linear")
     parser.add_argument("--maxdays", type=int, default=30)
-    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
+    )
     return parser
 
 

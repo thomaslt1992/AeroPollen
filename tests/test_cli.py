@@ -8,14 +8,28 @@ from aeropollen.cli import main
 def test_cli_outputs_expected_schema(tmp_path, method):
     source = tmp_path / "daily.csv"
     destination = tmp_path / "output.csv"
-    pd.DataFrame({
-        "date": pd.date_range("2020-01-01", periods=20),
-        "Betula": [0] * 5 + [110] * 10 + [0] * 5,
-    }).to_csv(source, index=False)
-    assert main([
-        "--input", str(source), "--output", str(destination),
-        "--method", method, "--species", "Betula", "--no-interpolation",
-    ]) == 0
+    pd.DataFrame(
+        {
+            "date": pd.date_range("2020-01-01", periods=20),
+            "Betula": [0] * 5 + [110] * 10 + [0] * 5,
+        }
+    ).to_csv(source, index=False)
+    assert (
+        main(
+            [
+                "--input",
+                str(source),
+                "--output",
+                str(destination),
+                "--method",
+                method,
+                "--species",
+                "Betula",
+                "--no-interpolation",
+            ]
+        )
+        == 0
+    )
     result = pd.read_csv(destination)
     assert result["pollen_type"].tolist() == ["Betula"]
     assert "day_threshold" in result.columns
