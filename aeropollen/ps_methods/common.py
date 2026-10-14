@@ -16,7 +16,6 @@ RESULT_COLUMNS = [
     "pollen_season_integral",
     "total_pollen_integral",
     "day_threshold",
-    "days_above_threshold",
 ]
 
 
@@ -41,8 +40,7 @@ def empty_result(
         "ps_length": np.nan,
         "pollen_season_integral": np.nan,
         "total_pollen_integral": total_integral,
-        "day_threshold": float(day_threshold),
-        "days_above_threshold": int(days_above_threshold),
+        "day_threshold": int(days_above_threshold),
     }
 
 
@@ -53,7 +51,7 @@ def format_results(results: list[dict[str, Any]]) -> pd.DataFrame:
         "ps_end_doy",
         "peak_doy",
         "ps_length",
-        "days_above_threshold",
+        "day_threshold",
     ):
         frame[column] = frame[column].astype("Int64")
     for column in ("ps_start", "ps_end", "peak_date"):
