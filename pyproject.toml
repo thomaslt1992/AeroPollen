@@ -1,14 +1,64 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "aeropollen"
 version = "0.1.0"
-description = "Simplified pollen-season calculator (Python version of AeRobiology)"
+description = "Tools for estimating pollen-season characteristics from daily observations"
+readme = "README.md"
+license = "Unlicense"
+license-files = ["LICENSE"]
 authors = [{ name = "Thomas Tasioulis", email = "thomas.tasioulis92@gmail.com" }]
-requires-python = ">=3.8"
-dependencies = ["pandas", "numpy"]
+requires-python = ">=3.10"
+keywords = ["aerobiology", "pollen", "pollen season"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+]
+dependencies = [
+    "numpy>=1.23",
+    "pandas>=2.0",
+    "PyYAML>=6.0",
+]
+
+[project.scripts]
+aeropollen = "aeropollen.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/thomaslt1992/AeroPollen"
+Issues = "https://github.com/thomaslt1992/AeroPollen/issues"
+Repository = "https://github.com/thomaslt1992/AeroPollen.git"
+
+[project.optional-dependencies]
+dev = [
+    "build>=1.2",
+    "pytest>=8.0",
+    "ruff>=0.8",
+    "twine>=5.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["aeropollen*"]
+exclude = ["aeropollen.tests*"]
+
+[tool.setuptools.package-data]
+aeropollen = ["config/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "UP"]
