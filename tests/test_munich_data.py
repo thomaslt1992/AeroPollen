@@ -80,3 +80,32 @@ def test_munich_grains_matches_consecutive_day_definition() -> None:
         "2014-08-12",
         "2015-09-01",
     ]
+
+
+def test_munich_moving_matches_centered_average_definition() -> None:
+    data = pd.read_csv(DATA_FILE)
+
+    result = calculate_ps(
+        data[["date", "Poaceae"]],
+        method="moving",
+        man=7,
+        th_ma=4,
+    )
+
+    assert result["season"].tolist() == list(range(2010, 2016))
+    assert result["ps_start"].tolist() == [
+        "2010-05-14",
+        "2011-04-25",
+        "2012-05-16",
+        "2013-06-02",
+        "2014-05-03",
+        "2015-05-05",
+    ]
+    assert result["ps_end"].tolist() == [
+        "2010-08-02",
+        "2011-07-20",
+        "2012-08-05",
+        "2013-08-20",
+        "2014-08-05",
+        "2015-08-15",
+    ]

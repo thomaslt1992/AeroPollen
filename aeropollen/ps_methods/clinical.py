@@ -1,30 +1,15 @@
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
 import yaml
 
+from .common import RESULT_COLUMNS, empty_result, format_results
+
 CLINICAL_POLLEN_ALIASES = {"grass": "grasses"}
 
-RESULT_COLUMNS = [
-    "pollen_type",
-    "season",
-    "ps_start",
-    "ps_end",
-    "peak_date",
-    "ps_start_doy",
-    "ps_end_doy",
-    "peak_doy",
-    "ps_length",
-    "pollen_season_integral",
-    "total_pollen_integral",
-    "day_threshold",
-    "days_above_threshold",
-]
 
-
-def load_clinical_cfg(path: str | Path | None = None) -> dict[str, dict[str, Any]]:
+def load_clinical_cfg(path: str | Path | None = None) -> dict[str, dict[str, object]]:
     config_path = (
         Path(path)
         if path is not None
@@ -67,7 +52,7 @@ def _validate_clinical_params(params: dict[str, float | int]) -> None:
 
 def _resolve_clinical_params(
     *,
-    pollen_params: dict[str, dict[str, Any]],
+    pollen_params: dict[str, dict[str, object]],
     clinical_pollen_type: str | None,
     n_clinical: int,
     window_clinical: int,
@@ -169,37 +154,11 @@ def _clinical_bounds(
     return start_idx, end_idx
 
 
-def _empty_result(
-    pollen_type: str,
-    season: int,
-    *,
-    day_threshold: float,
-    peak_date: Any = pd.NaT,
-    total_integral: float = np.nan,
-    days_above_threshold: int = 0,
-) -> dict[str, Any]:
-    return {
-        "pollen_type": pollen_type,
-        "season": season,
-        "ps_start": pd.NaT,
-        "ps_end": pd.NaT,
-        "peak_date": peak_date,
-        "ps_start_doy": np.nan,
-        "ps_end_doy": np.nan,
-        "peak_doy": peak_date.dayofyear if pd.notna(peak_date) else np.nan,
-        "ps_length": np.nan,
-        "pollen_season_integral": np.nan,
-        "total_pollen_integral": total_integral,
-        "day_threshold": day_threshold,
-        "days_above_threshold": days_above_threshold,
-    }
-
-
 def calculate_ps_clinical(
     dates: pd.Series,
     pollen_df: pd.DataFrame,
     *,
-    pollen_params: dict[str, dict[str, Any]] | None = None,
+    pollen_params: dict[str, dict[str, object]] | None = None,
     clinical_pollen_type: str | None = None,
     n_clinical: int = 5,
     window_clinical: int = 7,
@@ -224,7 +183,7 @@ def calculate_ps_clinical(
     if len(parsed_dates) == 0 or pollen_df.empty:
         return pd.DataFrame(columns=RESULT_COLUMNS)
 
-    results: list[dict[str, Any]] = []
+    results: list[dict[str, object]] = []
     for pollen_type in pollen_df.columns:
         values = pd.to_numeric(pollen_df[pollen_type], errors="coerce")
         time_series = pd.DataFrame({"date": parsed_dates, "value": values}).set_index(
@@ -241,7 +200,7 @@ def calculate_ps_clinical(
 
             if not finite.any():
                 results.append(
-                    _empty_result(
+                    empty_result(
                         pollen_type,
                         int(season_year),
                         day_threshold=float(params["day_threshold"]),
@@ -262,7 +221,7 @@ def calculate_ps_clinical(
 
             if start_idx is None or end_idx is None:
                 results.append(
-                    _empty_result(
+                    empty_result(
                         pollen_type,
                         int(season_year),
                         day_threshold=float(params["day_threshold"]),
@@ -295,17 +254,4 @@ def calculate_ps_clinical(
                 }
             )
 
-    result = pd.DataFrame(results, columns=RESULT_COLUMNS)
-    for column in (
-        "ps_start_doy",
-        "ps_end_doy",
-        "peak_doy",
-        "ps_length",
-        "days_above_threshold",
-    ):
-        result[column] = result[column].astype("Int64")
-    for column in ("ps_start", "ps_end", "peak_date"):
-        result[column] = pd.to_datetime(result[column], errors="coerce").dt.strftime(
-            "%Y-%m-%d"
-        )
-    return result
+    return format_results(results)
