@@ -125,7 +125,3 @@ The regression tests cover these source-defined cases. This implementation has b
 python -m pip install -e ".[dev]"
 python -m pytest -q
 ```
-
-## Data and license
-
-Example pollen data originate from AeRobiology; see [data attribution](aeropollen/data/README.md). AeroPollen source code is released under the [Unlicense](LICENSE). Example datasets retain their upstream licensing terms.
