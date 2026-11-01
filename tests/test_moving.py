@@ -30,7 +30,7 @@ def test_moving_uses_threshold_interval_around_moving_peak() -> None:
     assert result.loc[0, "peak_date"] == "2020-01-03"
     assert result.loc[0, "ps_length"] == 3
     assert result.loc[0, "pollen_season_integral"] == 18
-    assert result.loc[0, "days_above_threshold"] == 3
+    assert result.loc[0, "day_threshold"] == 3
 
 
 def test_even_moving_window_is_promoted_to_next_odd_window() -> None:
@@ -89,7 +89,6 @@ def test_all_methods_return_the_same_columns() -> None:
         "pollen_season_integral",
         "total_pollen_integral",
         "day_threshold",
-        "days_above_threshold",
     ]
     method_arguments = {
         "percentage": {},
@@ -110,4 +109,5 @@ def test_all_methods_return_the_same_columns() -> None:
             interpolation=False,
             **arguments,
         )
-        assert result.columns.tolist() == expected
+        extras = ["ppp_start_doy", "ppp_end_doy", "ppp_length", "PPP", "total_ppp_seasons"] if method == "clinical" else []
+        assert result.columns.tolist() == expected + extras
