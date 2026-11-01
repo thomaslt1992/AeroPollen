@@ -243,16 +243,14 @@ def calculate_ps_clinical(
             )
 
             if not finite.any():
-                results.append(
-                    {
-                        **empty_result(
+                results.append({
+                    **empty_result(
                         pollen_type,
                         int(season_year),
                         day_threshold=float(params["day_threshold"]),
-                        ),
-                        **ppp_empty,
-                    }
-                )
+                    ),
+                    **ppp_empty,
+                })
                 continue
 
             total_integral = float(np.nansum(series))
@@ -267,18 +265,17 @@ def calculate_ps_clinical(
             )
 
             if start_idx is None or end_idx is None:
-                results.append(
-                    empty_result(
+                results.append({
+                    **empty_result(
                         pollen_type,
                         int(season_year),
                         day_threshold=float(params["day_threshold"]),
                         peak_date=peak_date,
                         total_integral=total_integral,
                         days_above_threshold=days_above,
-                        ),
-                        **ppp_empty,
-                    }
-                )
+                    ),
+                    **ppp_empty,
+                })
                 continue
 
             ppp = _peak_pollen_periods(
