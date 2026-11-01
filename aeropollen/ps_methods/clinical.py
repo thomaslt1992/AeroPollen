@@ -6,7 +6,8 @@ import yaml
 
 from .common import RESULT_COLUMNS, empty_result, format_results
 
-CLINICAL_POLLEN_ALIASES = {"grass": "grasses"}
+CLINICAL_POLLEN_ALIASES = {"grass": "grasses", "poac": "grasses", "poaceae": "grasses", "betula": "birch"}
+PPP_COLUMNS = ["Year", "start_doy", "end_doy", "ppp_length", "PPP", "total_ppp_seasons"]
 
 
 def load_clinical_cfg(path: str | Path | None = None) -> dict[str, dict[str, object]]:
@@ -154,6 +155,41 @@ def _clinical_bounds(
     return start_idx, end_idx
 
 
+def _peak_pollen_periods(
+    values: np.ndarray,
+    year_dates: pd.DatetimeIndex,
+    start_idx: int,
+    end_idx: int,
+    threshold: float,
+) -> dict[str, object]:
+    selected = values[start_idx : end_idx + 1]
+    qualifies = np.isfinite(selected) & (selected >= threshold)
+    padded = np.concatenate(([False], qualifies, [False]))
+    changes = np.flatnonzero(padded[1:] != padded[:-1])
+    starts = []
+    ends = []
+    lengths = []
+
+    for left, right in zip(changes[::2], changes[1::2]):
+        if right - left < 3:
+            continue
+        start = year_dates[start_idx + int(left)]
+        end = year_dates[start_idx + int(right) - 1]
+        if (end - start).days + 1 != right - left:
+            continue
+        starts.append(int(start.dayofyear))
+        ends.append(int(end.dayofyear))
+        lengths.append(int(right - left))
+
+    return {
+        "start_doy": starts,
+        "end_doy": ends,
+        "ppp_length": lengths,
+        "PPP": sum(lengths),
+        "total_ppp_seasons": len(lengths),
+    }
+
+
 def calculate_ps_clinical(
     dates: pd.Series,
     pollen_df: pd.DataFrame,
@@ -181,7 +217,7 @@ def calculate_ps_clinical(
     if len(parsed_dates) != len(pollen_df):
         raise ValueError("Length of dates and pollen_df must match.")
     if len(parsed_dates) == 0 or pollen_df.empty:
-        return pd.DataFrame(columns=RESULT_COLUMNS)
+        return pd.DataFrame(columns=[*RESULT_COLUMNS, *PPP_COLUMNS])
 
     results: list[dict[str, object]] = []
     for pollen_type in pollen_df.columns:
@@ -194,17 +230,28 @@ def calculate_ps_clinical(
             series = group["value"].to_numpy(dtype="float64")
             year_dates = group.index
             finite = np.isfinite(series)
+            ppp_empty = {
+                "Year": int(season_year),
+                "start_doy": [],
+                "end_doy": [],
+                "ppp_length": [],
+                "PPP": 0,
+                "total_ppp_seasons": 0,
+            }
             days_above = int(
                 np.sum(finite & (series >= float(params["day_threshold"])))
             )
 
             if not finite.any():
                 results.append(
-                    empty_result(
+                    {
+                        **empty_result(
                         pollen_type,
                         int(season_year),
                         day_threshold=float(params["day_threshold"]),
-                    )
+                        ),
+                        **ppp_empty,
+                    }
                 )
                 continue
 
@@ -228,14 +275,25 @@ def calculate_ps_clinical(
                         peak_date=peak_date,
                         total_integral=total_integral,
                         days_above_threshold=days_above,
-                    )
+                        ),
+                        **ppp_empty,
+                    }
                 )
                 continue
 
+            ppp = _peak_pollen_periods(
+                series,
+                year_dates,
+                start_idx,
+                end_idx,
+                threshold=float(params["day_threshold"]),
+            )
             start_date = year_dates[start_idx]
             end_date = year_dates[end_idx]
             results.append(
                 {
+                    **ppp,
+                    "Year": int(season_year),
                     "pollen_type": pollen_type,
                     "season": int(season_year),
                     "ps_start": start_date,
@@ -254,4 +312,5 @@ def calculate_ps_clinical(
                 }
             )
 
-    return format_results(results)
+    formatted = format_results(results)
+    return formatted.join(pd.DataFrame(results)[PPP_COLUMNS])
