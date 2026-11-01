@@ -29,6 +29,9 @@ dependencies = [
     "PyYAML>=6.0",
 ]
 
+[project.scripts]
+aeropollen = "aeropollen.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/thomaslt1992/AeroPollen"
 Issues = "https://github.com/thomaslt1992/AeroPollen/issues"
