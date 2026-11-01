@@ -1,6 +1,8 @@
+from typing import Any
+
 import numpy as np
 import pandas as pd
-from typing import Any, Dict, List, Optional
+
 from ..preprocessing.interpolation import _maybe_interpolate
 
 
@@ -9,7 +11,7 @@ def calculate_ps_percentage(
     pollen_df: pd.DataFrame,
     perc: float,
     th_sum: int,
-    day_threshold: Optional[int] = None,
+    day_threshold: int | None = None,
     interpolation: bool = True,
     int_method: str = "linear",
 ) -> pd.DataFrame:
@@ -30,7 +32,7 @@ def calculate_ps_percentage(
     if len(dates) != len(pollen_df):
         raise ValueError("Length of dates and pollen_df must match.")
 
-    results: List[Dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
 
     for p_type in pollen_df.columns:
         # Prepare and interpolate
@@ -38,7 +40,11 @@ def calculate_ps_percentage(
         s.index = dates
         s = _maybe_interpolate(s, interpolation=interpolation, int_method=int_method)
 
-        tmp = pd.DataFrame({"date": s.index, "value": s.values}).set_index("date").sort_index()
+        tmp = (
+            pd.DataFrame({"date": s.index, "value": s.values})
+            .set_index("date")
+            .sort_index()
+        )
 
         for year, g in tmp.groupby(tmp.index.year):
             vals = g["value"].to_numpy(dtype="float64")
@@ -82,11 +88,17 @@ def calculate_ps_percentage(
                     "peak_date": peak_date,
                     "ps_start_doy": int(start_date.dayofyear),
                     "ps_end_doy": int(end_date.dayofyear),
-                    "peak_doy": int(peak_date.dayofyear) if pd.notna(peak_date) else np.nan,
+                    "peak_doy": int(peak_date.dayofyear)
+                    if pd.notna(peak_date)
+                    else np.nan,
                     "ps_length": ps_length,
                     "pollen_season_integral": season_integral,
-                    "total_pollen_integral": np.nan if total_integral == 0 else total_integral,
-                    "day_threshold": day_threshold if day_threshold is not None else np.nan,
+                    "total_pollen_integral": np.nan
+                    if total_integral == 0
+                    else total_integral,
+                    "day_threshold": day_threshold
+                    if day_threshold is not None
+                    else np.nan,
                 }
             )
 
@@ -102,12 +114,16 @@ def calculate_ps_percentage(
 
     for col in date_cols:
         if col in return_df:
-            return_df[col] = pd.to_datetime(return_df[col], errors="coerce").dt.strftime("%Y-%m-%d")
+            return_df[col] = pd.to_datetime(
+                return_df[col], errors="coerce"
+            ).dt.strftime("%Y-%m-%d")
 
     return return_df
 
 
-def _empty_result(p_type: str, year: int, total_integral: float = np.nan) -> Dict[str, Any]:
+def _empty_result(
+    p_type: str, year: int, total_integral: float = np.nan
+) -> dict[str, Any]:
     """Return an empty-row dictionary for consistency with output schema."""
     return {
         "pollen_type": p_type,
