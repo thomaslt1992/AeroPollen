@@ -18,6 +18,7 @@ def _interpolate_short_gaps(
     *,
     method: str,
     maxdays: int,
+    extrapolate: bool = True,
 ) -> pd.Series:
     numeric = pd.to_numeric(series, errors="coerce")
     if maxdays == 0 or not numeric.isna().any():
@@ -27,7 +28,11 @@ def _interpolate_short_gaps(
     groups = missing.ne(missing.shift(fill_value=False)).cumsum()
     gap_sizes = missing.groupby(groups).transform("sum")
     fillable = missing & gap_sizes.le(maxdays)
-    interpolated = numeric.interpolate(method=method, limit_direction="both")
+    interpolated = numeric.interpolate(
+        method=method,
+        limit_direction="both",
+        limit_area=None if extrapolate else "inside",
+    )
 
     result = numeric.copy()
     result.loc[fillable] = interpolated.loc[fillable]
@@ -51,6 +56,7 @@ def preprocess_pollen_timeseries(
     interpolation: bool = True,
     int_method: str = "linear",
     maxdays: int = 30,
+    extrapolate: bool = True,
 ) -> pd.DataFrame:
     """Return a continuous daily pollen time series with optional gap filling."""
     if date_col not in data.columns:
@@ -80,6 +86,7 @@ def preprocess_pollen_timeseries(
                 df[column],
                 method=method,
                 maxdays=maxdays,
+                extrapolate=extrapolate,
             )
 
     return df.reset_index()

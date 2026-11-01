@@ -10,8 +10,8 @@ from aeropollen.ps_methods.common import peak_summary
 def test_peak_periods_partition_season(method):
     data = pd.DataFrame(
         {
-            "date": pd.date_range("2020-01-01", periods=7),
-            "custom": [0, 10, 20, 30, 20, 10, 0],
+            "date": pd.date_range("2020-01-01", periods=9),
+            "custom": [0, 0, 10, 20, 30, 20, 10, 0, 0],
         }
     )
     row = calculate_ps(
@@ -27,7 +27,7 @@ def test_peak_periods_partition_season(method):
         window_grains=3,
     ).iloc[0]
     assert row["peak_concentration"] == 30
-    assert row["days_from_season_start_to_peak"] == (4 if method == "moving" else 3)
+    assert row["days_from_season_start_to_peak"] == 3
     assert row["pollen_integral_through_peak"] == 60
     assert row["pollen_integral_after_peak"] == 30
     assert (

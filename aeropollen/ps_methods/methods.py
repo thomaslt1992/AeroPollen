@@ -60,8 +60,10 @@ def calculate_ps(
     if date_col is None:
         raise ValueError("data must contain a 'Date' column (case-insensitive).")
 
-    if method == "percentage" and (perc <= 5 or perc > 100):
-        raise ValueError("perc must be in (5, 100]. Typical value: 95.")
+    if method in {"moving", "percentage"} and def_season != "natural":
+        raise ValueError(
+            "Only def_season='natural' is supported for moving and percentage."
+        )
 
     df = preprocess_pollen_timeseries(
         data=data,
@@ -69,7 +71,18 @@ def calculate_ps(
         interpolation=interpolation,
         int_method=int_method,
         maxdays=maxdays,
+        extrapolate=method not in {"moving", "percentage"},
     )
+
+    if method in {"moving", "percentage"}:
+        if not interpolation:
+            df = df[df[date_col].isin(pd.to_datetime(data[date_col]))]
+        else:
+            present = df.drop(columns=date_col).notna().any(axis=1)
+            if present.any():
+                first, last = df.index[present][[0, -1]]
+                df = df.loc[first:last]
+        df = df.reset_index(drop=True)
 
     dates = df[date_col]
     pollen_cols = [c for c in df.columns if c != date_col]

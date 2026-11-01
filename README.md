@@ -94,7 +94,18 @@ The following additional columns are available for all methods:
 | `days_through_season_end` | Days after the peak day through season end. |
 | `pollen_integral_after_peak` | Pollen total after the peak day through season end. |
 
-The first annual maximum defines the peak when values tie. Period summaries are missing when no season is identified or the annual peak falls outside that season. An available annual peak concentration is still returned.
+The first annual maximum defines the peak when values tie. Clinical and grains leave period summaries missing when no season is identified or the annual peak falls outside that season. An available annual peak concentration is still returned.
+
+### Moving and percentage compatibility
+
+These methods follow the AeRobiology `calculate_ps.R` and `ma.R` calculations for calendar years (`def_season="natural"`). Other season-grouping options raise an error; they are not silently treated as calendar years. Linear interpolation (`linear` or `lineal`; `time` is equivalent on the daily grid) fills only interior gaps of at most `maxdays` days. Clinical and grains preprocessing is unchanged.
+
+- Moving removes missing observations before reconstructing the daily series between its first and last observations, with zeros in unresolved internal gaps. It uses the first smoothed maximum and strict below-threshold crossings. A missing crossing does not fall back to the first or last day.
+- Percentage uses a forward cumulative sum for the start and a reverse cumulative sum for the end. The end is the calendar day before the first reverse sum strictly below the tail threshold. An absent end boundary remains missing, including at `perc=100`. Values from 0 to 100 are accepted.
+- Annual statistics remain available when a boundary is undefined. Following R's summary assignment order, a missing start leaves both season boundaries missing; a missing end retains an available start. Dependent summaries and the high-day count remain missing. All-zero or all-missing years have missing statistics.
+- The pre/post-peak sums reproduce R's inclusive index ranges, including descending ranges. In particular, if the peak equals season end, R's `(peak + 1):end` includes the peak and following observation, rather than an empty interval. Thus `pollen_integral_after_peak` can be nonzero when `days_through_season_end` is zero, or missing when that following observation is absent. A peak outside the selected season can also give signed durations. These quirks apply only to moving and percentage for numerical compatibility.
+
+The regression tests cover these source-defined cases. This implementation has been checked against translated R formulas; it has not been validated by executing the R package in this environment.
 
 ## References
 

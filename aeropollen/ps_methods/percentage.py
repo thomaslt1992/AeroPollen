@@ -3,8 +3,9 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from ..preprocessing.interpolation import _maybe_interpolate
-from .common import RESULT_COLUMNS, empty_result, format_results, peak_summary
+from ..preprocessing.interpolation import preprocess_pollen_timeseries
+from .common import RESULT_COLUMNS, format_results
+from .reference_summary import reference_summary
 
 
 def calculate_ps_percentage(
@@ -16,6 +17,8 @@ def calculate_ps_percentage(
     int_method: str = "linear",
 ) -> pd.DataFrame:
     """Calculate seasons containing the central ``perc`` percent of pollen."""
+    if not np.isfinite(perc) or not 0 <= perc <= 100:
+        raise ValueError("perc must be between 0 and 100.")
     parsed_dates = pd.to_datetime(dates, errors="raise")
     if len(parsed_dates) != len(pollen_df):
         raise ValueError("Length of dates and pollen_df must match.")
@@ -27,83 +30,50 @@ def calculate_ps_percentage(
         return pd.DataFrame(columns=RESULT_COLUMNS)
 
     results: list[dict[str, Any]] = []
-    tail_fraction = (100.0 - float(perc)) / 200.0
 
     for pollen_type in pollen_df.columns:
         values = pd.to_numeric(pollen_df[pollen_type], errors="coerce")
-        values.index = parsed_dates
-        values = _maybe_interpolate(
-            values,
-            interpolation=interpolation,
-            int_method=int_method,
-        )
         time_series = pd.DataFrame(
-            {"date": values.index, "value": values.to_numpy()}
-        ).sort_values("date")
-        time_series = time_series.set_index("date")
+            {"date": parsed_dates.to_numpy(), "value": values.to_numpy()}
+        )
+        if interpolation:
+            time_series = preprocess_pollen_timeseries(
+                time_series,
+                date_col="date",
+                int_method=int_method,
+                extrapolate=False,
+            )
+        time_series = time_series.sort_values("date").set_index("date")
 
         for season_year, group in time_series.groupby(time_series.index.year):
-            series = group["value"].to_numpy(dtype="float64")
-            year_dates = group.index
-            finite = np.isfinite(series)
-            days_above = int(np.sum(finite & (series >= float(day_threshold))))
-
-            if not finite.any():
-                results.append(
-                    empty_result(
-                        pollen_type,
-                        int(season_year),
-                        day_threshold=float(day_threshold),
-                    )
-                )
-                continue
-
-            total_integral = float(np.nansum(series))
-            peak_idx = int(np.nanargmax(series))
-            peak_date = year_dates[peak_idx]
-            if total_integral <= 0:
-                results.append(
-                    empty_result(
-                        pollen_type,
-                        int(season_year),
-                        day_threshold=float(day_threshold),
-                        peak_date=peak_date,
-                        peak_concentration=float(series[peak_idx]),
-                        total_integral=total_integral,
-                        days_above_threshold=days_above,
-                    )
-                )
-                continue
-
-            cumulative = np.cumsum(np.nan_to_num(series, nan=0.0))
-            start_idx = int(np.argmax(cumulative >= total_integral * tail_fraction))
-            end_candidates = np.flatnonzero(
-                cumulative > total_integral * (1.0 - tail_fraction)
-            )
-            end_idx = int(end_candidates[0]) if end_candidates.size else len(series) - 1
-            start_date = year_dates[start_idx]
-            end_date = year_dates[end_idx]
-
+            observed = group["value"].dropna()
+            series = observed.to_numpy(dtype="float64")
+            year_dates = observed.index
+            start_idx = None
+            end_idx = None
+            if series.size and float(np.sum(series)) != 0:
+                limit = float(np.sum(series)) / 100 * ((100 - float(perc)) / 2)
+                cumulative = np.cumsum(series)
+                remaining = np.cumsum(series[::-1])[::-1]
+                starts = np.flatnonzero(cumulative >= limit)
+                ends = np.flatnonzero(remaining < limit)
+                if starts.size:
+                    start_idx = int(starts[0])
+                if ends.size:
+                    end_date = year_dates[int(ends[0])] - pd.Timedelta(days=1)
+                    matches = np.flatnonzero(year_dates == end_date)
+                    if matches.size:
+                        end_idx = int(matches[0])
             results.append(
-                {
-                    "pollen_type": pollen_type,
-                    "season": int(season_year),
-                    "ps_start": start_date,
-                    "ps_end": end_date,
-                    "peak_date": peak_date,
-                    **peak_summary(
-                        series, year_dates, start_idx, end_idx, peak_idx
-                    ),
-                    "ps_start_doy": int(start_date.dayofyear),
-                    "ps_end_doy": int(end_date.dayofyear),
-                    "peak_doy": int(peak_date.dayofyear),
-                    "ps_length": int((end_date - start_date).days + 1),
-                    "pollen_season_integral": float(
-                        np.nansum(series[start_idx : end_idx + 1])
-                    ),
-                    "total_pollen_integral": total_integral,
-                    "day_threshold": days_above,
-                }
+                reference_summary(
+                    pollen_type,
+                    int(season_year),
+                    series,
+                    year_dates,
+                    start_idx,
+                    end_idx,
+                    day_threshold,
+                )
             )
 
     return format_results(results)

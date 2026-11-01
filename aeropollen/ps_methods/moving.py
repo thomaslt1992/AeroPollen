@@ -3,7 +3,8 @@ from numbers import Integral, Real
 import numpy as np
 import pandas as pd
 
-from .common import RESULT_COLUMNS, empty_result, format_results, peak_summary
+from .common import RESULT_COLUMNS, format_results
+from .reference_summary import reference_summary
 
 
 def _validate_moving_params(
@@ -27,13 +28,12 @@ def _validate_moving_params(
 def moving_average(values: np.ndarray, man: int) -> np.ndarray:
     effective_man = int(man) + 1 if int(man) % 2 == 0 else int(man)
     half_window = effective_man // 2
-    cumulative = np.concatenate(([0.0], np.cumsum(values, dtype="float64")))
     result = np.empty(values.size, dtype="float64")
 
     for index in range(values.size):
         start = max(0, index - half_window)
         stop = min(values.size, index + half_window + 1)
-        result[index] = (cumulative[stop] - cumulative[start]) / (stop - start)
+        result[index] = float(np.mean(values[start:stop]))
     return result
 
 
@@ -54,8 +54,8 @@ def _moving_bounds(
     before_peak = np.flatnonzero(averages[:moving_peak] < float(th_ma))
     after_peak = np.flatnonzero(averages[moving_peak + 1 :] < float(th_ma))
 
-    start_idx = int(before_peak[-1] + 1) if before_peak.size else 0
-    end_idx = int(moving_peak + after_peak[0]) if after_peak.size else values.size - 1
+    start_idx = int(before_peak[-1] + 1) if before_peak.size else None
+    end_idx = int(moving_peak + after_peak[0]) if after_peak.size else None
     return start_idx, end_idx
 
 
@@ -93,69 +93,26 @@ def calculate_ps_moving(
         time_series = time_series.set_index("date")
 
         for season_year, group in time_series.groupby(time_series.index.year):
-            full_dates = pd.date_range(group.index.min(), group.index.max(), freq="D")
-            group = group.reindex(full_dates)
-            raw_values = group["value"].to_numpy(dtype="float64")
-            year_dates = group.index
-            finite = np.isfinite(raw_values)
-            days_above = int(np.sum(finite & (raw_values >= float(day_threshold))))
-
-            if not finite.any():
-                results.append(
-                    empty_result(
-                        pollen_type,
-                        int(season_year),
-                        day_threshold=float(day_threshold),
-                    )
+            observed = group["value"].dropna()
+            if observed.empty:
+                year_dates = pd.DatetimeIndex([])
+                values = np.array([], dtype="float64")
+            else:
+                year_dates = pd.date_range(observed.index.min(), observed.index.max())
+                values = observed.reindex(year_dates, fill_value=0).to_numpy(
+                    dtype="float64"
                 )
-                continue
-
-            total_integral = float(np.nansum(raw_values))
-            peak_idx = int(np.nanargmax(raw_values))
-            peak_date = year_dates[peak_idx]
-            moving_values = np.nan_to_num(raw_values, nan=0.0)
-            start_idx, end_idx = _moving_bounds(
-                moving_values,
-                man=int(man),
-                th_ma=float(th_ma),
-            )
-
-            if start_idx is None or end_idx is None:
-                results.append(
-                    empty_result(
-                        pollen_type,
-                        int(season_year),
-                        day_threshold=float(day_threshold),
-                        peak_date=peak_date,
-                        peak_concentration=float(raw_values[peak_idx]),
-                        total_integral=total_integral,
-                        days_above_threshold=days_above,
-                    )
-                )
-                continue
-
-            start_date = year_dates[start_idx]
-            end_date = year_dates[end_idx]
+            start_idx, end_idx = _moving_bounds(values, man=int(man), th_ma=th_ma)
             results.append(
-                {
-                    "pollen_type": pollen_type,
-                    "season": int(season_year),
-                    "ps_start": start_date,
-                    "ps_end": end_date,
-                    "peak_date": peak_date,
-                    **peak_summary(
-                        raw_values, year_dates, start_idx, end_idx, peak_idx
-                    ),
-                    "ps_start_doy": int(start_date.dayofyear),
-                    "ps_end_doy": int(end_date.dayofyear),
-                    "peak_doy": int(peak_date.dayofyear),
-                    "ps_length": int((end_date - start_date).days + 1),
-                    "pollen_season_integral": float(
-                        np.nansum(raw_values[start_idx : end_idx + 1])
-                    ),
-                    "total_pollen_integral": total_integral,
-                    "day_threshold": days_above,
-                }
+                reference_summary(
+                    pollen_type,
+                    int(season_year),
+                    values,
+                    year_dates,
+                    start_idx,
+                    end_idx,
+                    day_threshold,
+                )
             )
 
     return format_results(results)
