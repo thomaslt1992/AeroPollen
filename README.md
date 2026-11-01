@@ -141,13 +141,14 @@ results = calculate_ps(
 )
 ```
 
-For an existing DataFrame, supply the source filename explicitly:
+For an existing DataFrame, the default output is `df_ps.csv` in the current
+working directory. Optionally supply `source_name="munich_pollen.csv"` to save
+`munich_pollen_ps.csv` instead:
 
 ```python
 results = calculate_ps(
     data[["date", "Betula", "Poaceae"]],
     method="clinical",
-    source_name="munich_pollen.csv",
     return_result=True,
 )
 ```

@@ -60,8 +60,6 @@ def test_dataframe_export_and_even_window(tmp_path):
     saved = metadata(tmp_path / "custom_ps.csv")
     assert saved["arguments"]["man"] == 4
     assert saved["effective_man"] == 5
-    with pytest.raises(ValueError, match="source_name"):
-        calculate_ps(data, return_result=True)
 
 
 def test_export_is_opt_in(tmp_path):
@@ -69,3 +67,23 @@ def test_export_is_opt_in(tmp_path):
     pd.DataFrame({"date": ["2020-01-01"], "pollen": [10]}).to_csv(source, index=False)
     calculate_ps(source)
     assert not (tmp_path / "sample_ps.csv").exists()
+
+
+@pytest.mark.parametrize("method", ["clinical", "grains", "moving", "percentage"])
+def test_dataframe_default_filename(tmp_path, monkeypatch, method):
+    monkeypatch.chdir(tmp_path)
+    data = pd.DataFrame(
+        {
+            "date": pd.date_range("2020-01-01", periods=30),
+            "Poaceae": [0] * 5 + [100] * 20 + [0] * 5,
+        }
+    )
+    expected = calculate_ps(data, method=method)
+    actual = calculate_ps(data, method=method, return_result=True)
+    pd.testing.assert_frame_equal(expected, actual)
+    output = tmp_path / "df_ps.csv"
+    pd.testing.assert_frame_equal(
+        pd.read_csv(output, comment="#"),
+        pd.read_csv(io.StringIO(expected.to_csv(index=False))),
+    )
+    assert metadata(output)["source_name"] == "df.csv"

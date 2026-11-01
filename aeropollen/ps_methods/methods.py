@@ -48,8 +48,8 @@ def calculate_ps(
     if isinstance(data, (str, Path)):
         source_name = Path(data)
         data = pd.read_csv(source_name)
-    if (return_result or export_result) and source_name is None:
-        raise ValueError("CSV export requires a CSV input path or source_name.")
+    if source_name is None:
+        source_name = "df.csv"
     if not isinstance(data, pd.DataFrame):
         raise TypeError("data must be a pandas DataFrame")
 
