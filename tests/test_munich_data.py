@@ -51,3 +51,32 @@ def test_munich_clinical_presets_return_each_year() -> None:
     ]
     assert birch["day_threshold"].eq(100).all()
     assert grasses["day_threshold"].eq(50).all()
+
+
+def test_munich_grains_matches_consecutive_day_definition() -> None:
+    data = pd.read_csv(DATA_FILE)
+
+    result = calculate_ps(
+        data[["date", "Poaceae"]],
+        method="grains",
+        window_grains=3,
+        th_pollen=2,
+    )
+
+    assert result["season"].tolist() == list(range(2010, 2016))
+    assert result["ps_start"].tolist() == [
+        "2010-05-08",
+        "2011-04-22",
+        "2012-05-01",
+        "2013-05-14",
+        "2014-04-24",
+        "2015-05-05",
+    ]
+    assert result["ps_end"].tolist() == [
+        "2010-09-08",
+        "2011-09-12",
+        "2012-09-06",
+        "2013-09-17",
+        "2014-08-12",
+        "2015-09-01",
+    ]
