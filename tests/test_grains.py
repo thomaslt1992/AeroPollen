@@ -30,7 +30,7 @@ def test_grains_uses_first_and_last_consecutive_runs() -> None:
     assert result.loc[0, "ps_end"] == "2020-01-08"
     assert result.loc[0, "ps_length"] == 7
     assert result.loc[0, "pollen_season_integral"] == 12
-    assert result.loc[0, "days_above_threshold"] == 6
+    assert result.loc[0, "day_threshold"] == 6
 
 
 def test_grains_threshold_is_inclusive() -> None:
