@@ -60,9 +60,9 @@ def calculate_ps(
     if date_col is None:
         raise ValueError("data must contain a 'Date' column (case-insensitive).")
 
-    if method in {"moving", "percentage"} and def_season != "natural":
+    if method in {"moving", "percentage", "grains"} and def_season != "natural":
         raise ValueError(
-            "Only def_season='natural' is supported for moving and percentage."
+            "Only def_season='natural' is supported for moving, percentage and grains."
         )
 
     df = preprocess_pollen_timeseries(
@@ -71,10 +71,10 @@ def calculate_ps(
         interpolation=interpolation,
         int_method=int_method,
         maxdays=maxdays,
-        extrapolate=method not in {"moving", "percentage"},
+        extrapolate=method not in {"moving", "percentage", "grains"},
     )
 
-    if method in {"moving", "percentage"}:
+    if method in {"moving", "percentage", "grains"}:
         if not interpolation:
             df = df[df[date_col].isin(pd.to_datetime(data[date_col]))]
         else:

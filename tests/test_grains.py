@@ -48,7 +48,7 @@ def test_grains_threshold_is_inclusive() -> None:
     assert result.loc[0, "ps_end"] == "2020-01-03"
 
 
-def test_missing_value_breaks_a_grains_run() -> None:
+def test_missing_value_is_omitted_before_finding_grains_runs() -> None:
     data = pollen_frame([10, 10, np.nan, 10, 10])
 
     result = calculate_ps(
@@ -59,11 +59,13 @@ def test_missing_value_breaks_a_grains_run() -> None:
         interpolation=False,
     )
 
-    assert pd.isna(result.loc[0, "ps_start"])
-    assert pd.isna(result.loc[0, "ps_end"])
+    assert result.loc[0, "ps_start"] == "2020-01-01"
+    assert result.loc[0, "ps_end"] == "2020-01-05"
+    assert result.loc[0, "ps_length"] == 5
+    assert result.loc[0, "pollen_season_integral"] == 40
 
 
-def test_missing_calendar_day_breaks_a_grains_run() -> None:
+def test_missing_calendar_day_does_not_break_a_grains_run() -> None:
     data = pd.DataFrame(
         {
             "Date": pd.to_datetime(["2020-01-01", "2020-01-02", "2020-01-04"]),
@@ -79,7 +81,8 @@ def test_missing_calendar_day_breaks_a_grains_run() -> None:
         interpolation=False,
     )
 
-    assert pd.isna(result.loc[0, "ps_start"])
+    assert result.loc[0, "ps_start"] == "2020-01-01"
+    assert result.loc[0, "ps_end"] == "2020-01-04"
 
 
 def test_year_without_qualifying_run_does_not_reuse_previous_year() -> None:
@@ -128,3 +131,63 @@ def test_negative_grains_threshold_is_rejected() -> None:
             method="grains",
             th_pollen=-1,
         )
+
+
+def test_grains_does_not_extrapolate_missing_edges() -> None:
+    row = calculate_ps(
+        pollen_frame([np.nan, 10, 10, np.nan]),
+        method="grains",
+        window_grains=3,
+        th_pollen=10,
+    ).iloc[0]
+    assert pd.isna(row.ps_start)
+    assert pd.isna(row.day_threshold)
+    assert row.total_pollen_integral == 20
+    assert row.peak_date == "2020-01-02"
+
+
+def test_grains_interpolates_only_short_interior_gaps() -> None:
+    data = pollen_frame([0, 10, np.nan, np.nan, np.nan, 10, 0])
+    short = calculate_ps(
+        data,
+        method="grains",
+        window_grains=5,
+        th_pollen=10,
+        maxdays=3,
+    ).iloc[0]
+    long = calculate_ps(
+        data,
+        method="grains",
+        window_grains=5,
+        th_pollen=10,
+        maxdays=2,
+    ).iloc[0]
+    assert short.ps_start == "2020-01-02"
+    assert short.ps_end == "2020-01-06"
+    assert short.pollen_season_integral == 50
+    assert pd.isna(long.ps_start)
+    assert long.total_pollen_integral == 20
+
+
+def test_grains_reproduces_r_post_peak_sum_at_season_end() -> None:
+    row = calculate_ps(
+        pollen_frame([0, 10, 20, 30, 1, 0]),
+        method="grains",
+        window_grains=3,
+        th_pollen=10,
+    ).iloc[0]
+    assert row.days_through_season_end == 0
+    assert row.pollen_integral_after_peak == 31
+
+
+def test_grains_reproduces_r_summary_when_peak_is_outside_season() -> None:
+    row = calculate_ps(
+        pollen_frame([100, 0, 10, 20, 10, 0]),
+        method="grains",
+        window_grains=3,
+        th_pollen=10,
+    ).iloc[0]
+    assert row.ps_start == "2020-01-03"
+    assert row.days_from_season_start_to_peak == -1
+    assert row.pollen_integral_through_peak == 110
+    assert row.pollen_integral_after_peak == 40

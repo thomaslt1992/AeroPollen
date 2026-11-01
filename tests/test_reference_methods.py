@@ -104,14 +104,14 @@ def test_percentage_preserves_r_inclusive_post_peak_slice():
     assert row.pollen_integral_after_peak == 99
 
 
-@pytest.mark.parametrize("method", ["moving", "percentage"])
+@pytest.mark.parametrize("method", ["moving", "percentage", "grains"])
 @pytest.mark.parametrize("grouping", ["interannual", "peak", "unknown"])
 def test_unsupported_season_grouping_is_not_silently_ignored(method, grouping):
     with pytest.raises(ValueError, match="natural"):
         calculate([0, 10, 0], method, def_season=grouping)
 
 
-@pytest.mark.parametrize("method", ["moving", "percentage"])
+@pytest.mark.parametrize("method", ["moving", "percentage", "grains"])
 def test_zero_year_has_missing_statistics(method):
     row = calculate([0, 0, 0], method, interpolation=False)
     assert pd.isna(row.peak_concentration)

@@ -3,7 +3,8 @@ from numbers import Integral, Real
 import numpy as np
 import pandas as pd
 
-from .common import RESULT_COLUMNS, empty_result, format_results, peak_summary
+from .common import RESULT_COLUMNS, format_results
+from .reference_summary import reference_summary
 
 
 def _validate_grains_params(
@@ -38,7 +39,7 @@ def _grains_bounds(
     window_grains: int,
     th_pollen: float,
 ) -> tuple[int | None, int | None]:
-    """Return the first and last bounds of qualifying consecutive-day runs."""
+    """Return bounds of qualifying runs in the retained observations."""
     if series.size < window_grains:
         return None, None
 
@@ -65,11 +66,10 @@ def calculate_ps_grains(
     th_pollen: float = 10,
     day_threshold: float = 100,
 ) -> pd.DataFrame:
-    """Calculate pollen seasons using consecutive threshold-exceeding days.
+    """Follow AeRobiology grains rules after dropping missing observations.
 
-    The season starts on the first day of the first run of ``window_grains``
-    consecutive days at or above ``th_pollen``. It ends on the final day of
-    the last qualifying run. Missing values break a run.
+    Runs contain ``window_grains`` observations at or above ``th_pollen``.
+    Unresolved missing calendar days do not break a run, matching R.
     """
     _validate_grains_params(
         window_grains=window_grains,
@@ -96,70 +96,24 @@ def calculate_ps_grains(
         time_series = time_series.set_index("date")
 
         for season_year, group in time_series.groupby(time_series.index.year):
-            # Preserve calendar-day consecutiveness even when this lower-level
-            # function is called without the package preprocessing step.
-            full_dates = pd.date_range(group.index.min(), group.index.max(), freq="D")
-            group = group.reindex(full_dates)
-            series = group["value"].to_numpy(dtype="float64")
-            year_dates = group.index
-            finite = np.isfinite(series)
-            days_above = int(np.sum(finite & (series >= float(day_threshold))))
-
-            if not finite.any():
-                results.append(
-                    empty_result(
-                        pollen_type,
-                        int(season_year),
-                        day_threshold=float(day_threshold),
-                    )
-                )
-                continue
-
-            total_integral = float(np.nansum(series))
-            peak_idx = int(np.nanargmax(series))
-            peak_date = year_dates[peak_idx]
+            observed = group["value"].dropna()
+            series = observed.to_numpy(dtype="float64")
+            year_dates = observed.index
             start_idx, end_idx = _grains_bounds(
                 series,
                 window_grains=int(window_grains),
                 th_pollen=float(th_pollen),
             )
-
-            if start_idx is None or end_idx is None:
-                results.append(
-                    empty_result(
-                        pollen_type,
-                        int(season_year),
-                        day_threshold=float(day_threshold),
-                        peak_date=peak_date,
-                        peak_concentration=float(series[peak_idx]),
-                        total_integral=total_integral,
-                        days_above_threshold=days_above,
-                    )
-                )
-                continue
-
-            start_date = year_dates[start_idx]
-            end_date = year_dates[end_idx]
             results.append(
-                {
-                    "pollen_type": pollen_type,
-                    "season": int(season_year),
-                    "ps_start": start_date,
-                    "ps_end": end_date,
-                    "peak_date": peak_date,
-                    **peak_summary(
-                        series, year_dates, start_idx, end_idx, peak_idx
-                    ),
-                    "ps_start_doy": int(start_date.dayofyear),
-                    "ps_end_doy": int(end_date.dayofyear),
-                    "peak_doy": int(peak_date.dayofyear),
-                    "ps_length": int((end_date - start_date).days + 1),
-                    "pollen_season_integral": float(
-                        np.nansum(series[start_idx : end_idx + 1])
-                    ),
-                    "total_pollen_integral": total_integral,
-                    "day_threshold": days_above,
-                }
+                reference_summary(
+                    pollen_type,
+                    int(season_year),
+                    series,
+                    year_dates,
+                    start_idx,
+                    end_idx,
+                    day_threshold,
+                )
             )
 
     return format_results(results)
