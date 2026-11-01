@@ -15,45 +15,28 @@ CLINICAL_POLLEN_ALIASES = {
 PPP_COLUMNS = ["ppp_start_doy", "ppp_end_doy", "ppp_length", "PPP", "total_ppp_seasons"]
 
 
-def load_clinical_cfg(path: str | Path | None = None) -> dict[str, dict[str, object]]:
-    config_path = (
-        Path(path)
-        if path is not None
-        else Path(__file__).resolve().parents[1] / "config" / "clinical_thresholds.yaml"
-    )
-    with config_path.open("r", encoding="utf-8") as stream:
-        config = yaml.safe_load(stream)
-    if not isinstance(config, dict):
-        raise TypeError("Clinical configuration must contain a mapping.")
-    return config
+def load_clinical_cfg(path: str | Path = None):
+    if path is None:
+        path = Path(__file__).resolve().parents[1] / "config" / "clinical_thresholds.yaml"
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
 
-def _canonical_pollen_type(pollen_type: str) -> str:
-    normalized = pollen_type.lower().strip()
-    return CLINICAL_POLLEN_ALIASES.get(normalized, normalized)
+def _maybe_interpolate(
+    s: pd.Series,
+    interpolation: bool,
+    int_method: str,
+) -> pd.Series:
+    if not interpolation:
+        return s
 
+    method = int_method or "linear"
+    if method == "linear":
+        return s.interpolate(method="linear")
+    if method == "time" and isinstance(s.index, pd.DatetimeIndex):
+        return s.interpolate(method="time")
 
-def _validate_clinical_params(params: dict[str, float | int]) -> None:
-    n_clinical = params["n_clinical"]
-    window_clinical = params["window_clinical"]
-    if (
-        not isinstance(n_clinical, int)
-        or isinstance(n_clinical, bool)
-        or n_clinical < 1
-    ):
-        raise ValueError("n_clinical must be a positive integer.")
-    if (
-        not isinstance(window_clinical, int)
-        or isinstance(window_clinical, bool)
-        or window_clinical < 1
-    ):
-        raise ValueError("window_clinical must be a positive integer.")
-    if n_clinical > window_clinical:
-        raise ValueError("n_clinical cannot exceed window_clinical.")
-    for name in ("th_pollen", "th_sum", "day_threshold"):
-        value = params[name]
-        if not isinstance(value, (int, float)) or isinstance(value, bool) or value < 0:
-            raise ValueError(f"{name} must be a non-negative number.")
+    return s.interpolate(method="linear")
 
 
 def _resolve_clinical_params(
