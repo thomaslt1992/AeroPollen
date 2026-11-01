@@ -80,9 +80,21 @@ Omit `--output` to print CSV results in the terminal and omit `--species` to pro
 | **Grains** | Starts with the first qualifying run and ends with the last, requiring a specified number of consecutive days above a concentration threshold. |
 | **Clinical** | Uses a species-specific 5-of-7-day rule with minimum daily concentrations and a cumulative threshold, based on EAACI definitions. |
 
-The clinical method additionally returns Peak Pollen Period (PPP) intervals within the identified season: `ppp_start_doy`, `ppp_end_doy`, `ppp_length`, `PPP` (total days), and `total_ppp_seasons`. The present implementation requires **five consecutive days** at or above the species-specific `day_threshold` defined in the YAML file. This duration is a package-specific choice; the published EAACI PPP definition uses **three consecutive days**.
+The clinical method additionally returns Peak Pollen Period (PPP) intervals within the identified season: `ppp_start_doy`, `ppp_end_doy`, `ppp_length`, `PPP` (total days), and `total_ppp_seasons`. The implementation requires **three consecutive days** at or above the species-specific `day_threshold` defined in the YAML file.
 
 All methods return the same season-summary columns, while clinical includes these five additional PPP fields. The output column `day_threshold` reports the *number of days* meeting or exceeding the applicable concentration threshold, not the threshold concentration itself.
+
+The following additional columns are available for all methods:
+
+| Column | Meaning |
+| --- | --- |
+| `peak_concentration` | Maximum daily concentration in the year. |
+| `days_from_season_start_to_peak` | Days from season start through the peak day, inclusive. |
+| `pollen_integral_through_peak` | Pollen total from season start through the peak day. |
+| `days_through_season_end` | Days after the peak day through season end. |
+| `pollen_integral_after_peak` | Pollen total after the peak day through season end. |
+
+The first annual maximum defines the peak when values tie. Period summaries are missing when no season is identified or the annual peak falls outside that season. An available annual peak concentration is still returned.
 
 ## References
 

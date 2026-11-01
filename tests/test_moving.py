@@ -89,6 +89,11 @@ def test_all_methods_return_the_same_columns() -> None:
         "pollen_season_integral",
         "total_pollen_integral",
         "day_threshold",
+        "peak_concentration",
+        "days_from_season_start_to_peak",
+        "pollen_integral_through_peak",
+        "days_through_season_end",
+        "pollen_integral_after_peak",
     ]
     method_arguments = {
         "percentage": {},

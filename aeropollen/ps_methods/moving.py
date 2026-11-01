@@ -3,7 +3,7 @@ from numbers import Integral, Real
 import numpy as np
 import pandas as pd
 
-from .common import RESULT_COLUMNS, empty_result, format_results
+from .common import RESULT_COLUMNS, empty_result, format_results, peak_summary
 
 
 def _validate_moving_params(
@@ -127,6 +127,7 @@ def calculate_ps_moving(
                         int(season_year),
                         day_threshold=float(day_threshold),
                         peak_date=peak_date,
+                        peak_concentration=float(raw_values[peak_idx]),
                         total_integral=total_integral,
                         days_above_threshold=days_above,
                     )
@@ -142,6 +143,9 @@ def calculate_ps_moving(
                     "ps_start": start_date,
                     "ps_end": end_date,
                     "peak_date": peak_date,
+                    **peak_summary(
+                        raw_values, year_dates, start_idx, end_idx, peak_idx
+                    ),
                     "ps_start_doy": int(start_date.dayofyear),
                     "ps_end_doy": int(end_date.dayofyear),
                     "peak_doy": int(peak_date.dayofyear),
