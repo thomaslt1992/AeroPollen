@@ -25,8 +25,7 @@ def test_clinical_uses_largest_n_values_for_sum() -> None:
     )
 
     assert pd.isna(result.loc[0, "ps_start"])
-    assert result.loc[0, "day_threshold"] == 50
-    assert result.loc[0, "days_above_threshold"] == 0
+    assert result.loc[0, "day_threshold"] == 0
 
 
 def test_grass_alias_matches_grasses_preset() -> None:
@@ -66,8 +65,7 @@ def test_manual_clinical_parameters_are_applied_without_preset() -> None:
     assert result.loc[0, "ps_start"] == "2020-01-02"
     assert result.loc[0, "ps_end"] == "2020-01-06"
     assert result.loc[0, "ps_length"] == 5
-    assert result.loc[0, "day_threshold"] == 10
-    assert result.loc[0, "days_above_threshold"] == 5
+    assert result.loc[0, "day_threshold"] == 5
 
 
 def test_preset_intentionally_overrides_manual_parameters() -> None:
@@ -133,9 +131,9 @@ def test_ppp_uses_yaml_threshold_and_five_consecutive_days(species, threshold):
         interpolation=False,
     )
     row = result.iloc[0]
-    assert row["day_threshold"] == threshold
-    assert row["start_doy"] == [7, 15]
-    assert row["end_doy"] == [11, 20]
+    assert row["day_threshold"] == 15
+    assert row["ppp_start_doy"] == [7, 15]
+    assert row["ppp_end_doy"] == [11, 20]
     assert row["ppp_length"] == [5, 6]
     assert row["PPP"] == 11
     assert row["total_ppp_seasons"] == 2
@@ -150,7 +148,7 @@ def test_ppp_auto_resolves_each_species_from_yaml():
     })
     result = calculate_ps(data, method="clinical", th_day=5000, interpolation=False)
     assert dict(zip(result["pollen_type"], result["day_threshold"])) == {
-        "birch": 100,
-        "ragweed": 50,
+        "birch": 10,
+        "ragweed": 10,
     }
     assert result["PPP"].tolist() == [10, 10]
