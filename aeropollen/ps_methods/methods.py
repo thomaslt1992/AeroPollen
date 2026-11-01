@@ -1,14 +1,17 @@
+from pathlib import Path
+
 import pandas as pd
 
 from ..preprocessing.interpolation import preprocess_pollen_timeseries
 from .clinical import calculate_ps_clinical
+from .export import export_results
 from .grains import calculate_ps_grains
 from .moving import calculate_ps_moving
 from .percentage import calculate_ps_percentage
 
 
 def calculate_ps(
-    data: pd.DataFrame,
+    data: pd.DataFrame | str | Path,
     method: str = "percentage",
     th_day: float = 100,
     perc: float = 95,
@@ -32,6 +35,8 @@ def calculate_ps(
     export_plot: bool = False,
     export_result: bool = False,
     clinical_pollen_type: str | None = None,
+    return_result: bool = False,
+    source_name: str | Path | None = None,
 ):
     """
     Estimate main pollen season parameters using different methods.
@@ -39,6 +44,12 @@ def calculate_ps(
     Supports 'percentage', 'moving', 'clinical', and 'grains' methods with unified
     interpolation logic.
     """
+    parameters = {key: value for key, value in locals().items() if key != "data"}
+    if isinstance(data, (str, Path)):
+        source_name = Path(data)
+        data = pd.read_csv(source_name)
+    if (return_result or export_result) and source_name is None:
+        raise ValueError("CSV export requires a CSV input path or source_name.")
     if not isinstance(data, pd.DataFrame):
         raise TypeError("data must be a pandas DataFrame")
 
@@ -128,6 +139,11 @@ def calculate_ps(
             window_grains=window_grains,
             th_pollen=th_pollen,
             day_threshold=th_day,
+        )
+
+    if return_result or export_result:
+        export_results(
+            pd.DataFrame(result_obj), source_name, parameters, pollen_cols, method
         )
 
     if result == "table":

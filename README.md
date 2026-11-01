@@ -125,3 +125,39 @@ The regression tests cover these source-defined cases. This implementation has b
 python -m pip install -e ".[dev]"
 python -m pytest -q
 ```
+
+### Save results with calculation parameters
+
+All four methods support `return_result=True`. Pass a CSV path to save
+`<input_name>_ps.csv` beside the input file:
+
+```python
+from aeropollen import calculate_ps
+
+results = calculate_ps(
+    "aeropollen/data/munich_pollen.csv",
+    method="grains",
+    return_result=True,
+)
+```
+
+For an existing DataFrame, supply the source filename explicitly:
+
+```python
+results = calculate_ps(
+    data[["date", "Betula", "Poaceae"]],
+    method="clinical",
+    source_name="munich_pollen.csv",
+    return_result=True,
+)
+```
+
+The function still returns its usual notebook result. The CSV contains the
+result table followed by comment-prefixed parameter rows with JSON values.
+These record every supplied or default argument, the selected pollen columns,
+resolved clinical thresholds (including PPP), and the effective odd moving
+window. Unused compatibility arguments are identified separately.
+Read only the result table with `pd.read_csv(path, comment="#")`.
+
+Export is off by default; `export_result=True` is also accepted for compatibility.
+Repeating an export to the same source name replaces its `_ps.csv` file.
