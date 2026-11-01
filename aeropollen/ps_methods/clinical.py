@@ -7,7 +7,7 @@ import yaml
 from .common import RESULT_COLUMNS, empty_result, format_results
 
 CLINICAL_POLLEN_ALIASES = {"grass": "grasses", "poac": "grasses", "poaceae": "grasses", "betula": "birch"}
-PPP_COLUMNS = ["Year", "ppp_start_doy", "ppp_end_doy", "ppp_length", "PPP", "total_ppp_seasons"]
+PPP_COLUMNS = ["ppp_start_doy", "ppp_end_doy", "ppp_length", "PPP", "total_ppp_seasons"]
 
 
 def load_clinical_cfg(path: str | Path | None = None) -> dict[str, dict[str, object]]:
@@ -233,7 +233,6 @@ def calculate_ps_clinical(
             year_dates = group.index
             finite = np.isfinite(series)
             ppp_empty = {
-                "Year": int(season_year),
                 "ppp_start_doy": [],
                 "ppp_end_doy": [],
                 "ppp_length": [],
@@ -292,8 +291,7 @@ def calculate_ps_clinical(
             results.append(
                 {
                     **ppp,
-                    "Year": int(season_year),
-                    "pollen_type": pollen_type,
+                        "pollen_type": pollen_type,
                     "season": int(season_year),
                     "ps_start": start_date,
                     "ps_end": end_date,
@@ -306,8 +304,7 @@ def calculate_ps_clinical(
                         np.nansum(series[start_idx : end_idx + 1])
                     ),
                     "total_pollen_integral": total_integral,
-                    "day_threshold": float(params["day_threshold"]),
-                    "days_above_threshold": days_above,
+                    "day_threshold": days_above,
                 }
             )
 
