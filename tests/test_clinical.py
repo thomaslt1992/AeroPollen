@@ -119,13 +119,13 @@ def test_invalid_clinical_window_is_rejected() -> None:
         ("cypress", 100),
     ],
 )
-def test_ppp_uses_yaml_threshold_and_five_consecutive_days(species, threshold):
+def test_ppp_uses_yaml_threshold_and_three_consecutive_days(species, threshold):
     data = pd.DataFrame(
         {
             "Date": pd.date_range("2020-01-01", periods=24),
             species: [0]
-            + [threshold] * 4
-            + [0]
+            + [threshold] * 3
+            + [0] * 2
             + [threshold] * 5
             + [0] * 3
             + [threshold] * 6
@@ -140,12 +140,12 @@ def test_ppp_uses_yaml_threshold_and_five_consecutive_days(species, threshold):
         interpolation=False,
     )
     row = result.iloc[0]
-    assert row["day_threshold"] == 15
-    assert row["ppp_start_doy"] == [7, 15]
-    assert row["ppp_end_doy"] == [11, 20]
-    assert row["ppp_length"] == [5, 6]
-    assert row["PPP"] == 11
-    assert row["total_ppp_seasons"] == 2
+    assert row["day_threshold"] == 14
+    assert row["ppp_start_doy"] == [2, 7, 15]
+    assert row["ppp_end_doy"] == [4, 11, 20]
+    assert row["ppp_length"] == [3, 5, 6]
+    assert row["PPP"] == 14
+    assert row["total_ppp_seasons"] == 3
 
 
 def test_ppp_auto_resolves_each_species_from_yaml():

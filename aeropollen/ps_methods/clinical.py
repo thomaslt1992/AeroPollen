@@ -176,7 +176,7 @@ def _peak_pollen_periods(
     lengths = []
 
     for left, right in zip(changes[::2], changes[1::2], strict=True):
-        if right - left < 5:
+        if right - left < 3:
             continue
         start = year_dates[start_idx + int(left)]
         end = year_dates[start_idx + int(right) - 1]
