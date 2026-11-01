@@ -158,7 +158,7 @@ def test_ppp_auto_resolves_each_species_from_yaml():
         }
     )
     result = calculate_ps(data, method="clinical", th_day=5000, interpolation=False)
-    assert dict(zip(result["pollen_type"], result["day_threshold"])) == {
+    assert dict(zip(result["pollen_type"], result["day_threshold"], strict=True)) == {
         "birch": 10,
         "ragweed": 10,
     }
