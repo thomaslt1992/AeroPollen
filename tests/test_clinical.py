@@ -48,7 +48,7 @@ def test_grass_alias_matches_grasses_preset() -> None:
 
 
 def test_manual_clinical_parameters_are_applied_without_preset() -> None:
-    data = pollen_frame([0, 10, 10, 10, 10, 10, 0, 0])
+    data = pollen_frame([0, 10, 10, 10, 10, 10, 0, 0]).rename(columns={"Poaceae": "custom_pollen"})
 
     result = calculate_ps(
         data,
