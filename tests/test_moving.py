@@ -109,5 +109,9 @@ def test_all_methods_return_the_same_columns() -> None:
             interpolation=False,
             **arguments,
         )
-        extras = ["ppp_start_doy", "ppp_end_doy", "ppp_length", "PPP", "total_ppp_seasons"] if method == "clinical" else []
+        extras = (
+            ["ppp_start_doy", "ppp_end_doy", "ppp_length", "PPP", "total_ppp_seasons"]
+            if method == "clinical"
+            else []
+        )
         assert result.columns.tolist() == expected + extras
