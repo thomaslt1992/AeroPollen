@@ -171,7 +171,7 @@ def _peak_pollen_periods(
     lengths = []
 
     for left, right in zip(changes[::2], changes[1::2]):
-        if right - left < 3:
+        if right - left < 5:
             continue
         start = year_dates[start_idx + int(left)]
         end = year_dates[start_idx + int(right) - 1]
@@ -203,16 +203,6 @@ def calculate_ps_clinical(
     day_threshold: float = 100,
 ) -> pd.DataFrame:
     config = load_clinical_cfg() if pollen_params is None else pollen_params
-    params = _resolve_clinical_params(
-        pollen_params=config,
-        clinical_pollen_type=clinical_pollen_type,
-        n_clinical=n_clinical,
-        window_clinical=window_clinical,
-        th_pollen=th_pollen,
-        th_sum=th_sum,
-        day_threshold=day_threshold,
-    )
-
     parsed_dates = pd.to_datetime(dates)
     if len(parsed_dates) != len(pollen_df):
         raise ValueError("Length of dates and pollen_df must match.")
@@ -221,6 +211,18 @@ def calculate_ps_clinical(
 
     results: list[dict[str, object]] = []
     for pollen_type in pollen_df.columns:
+        selected_type = clinical_pollen_type
+        if selected_type is None and _canonical_pollen_type(str(pollen_type)) in config:
+            selected_type = str(pollen_type)
+        params = _resolve_clinical_params(
+            pollen_params=config,
+            clinical_pollen_type=selected_type,
+            n_clinical=n_clinical,
+            window_clinical=window_clinical,
+            th_pollen=th_pollen,
+            th_sum=th_sum,
+            day_threshold=day_threshold,
+        )
         values = pd.to_numeric(pollen_df[pollen_type], errors="coerce")
         time_series = pd.DataFrame({"date": parsed_dates, "value": values}).set_index(
             "date"
