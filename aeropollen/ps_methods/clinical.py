@@ -103,16 +103,12 @@ def _resolve_clinical_params(
 
 
 def _window_meets_clinical_rule(
-    current_value: float,
     window: np.ndarray,
     *,
     n_clinical: int,
     th_pollen: float,
     th_sum: float,
 ) -> bool:
-    if not np.isfinite(current_value) or current_value < th_pollen:
-        return False
-
     qualifying = window[np.isfinite(window) & (window >= th_pollen)]
     if qualifying.size < n_clinical:
         return False
@@ -131,29 +127,17 @@ def _clinical_bounds(
     start_idx: int | None = None
     end_idx: int | None = None
 
-    for index, value in enumerate(series):
-        forward_window = series[index : index + window_clinical]
+    for index in range(len(series) - window_clinical + 1):
+        window = series[index : index + window_clinical]
         if _window_meets_clinical_rule(
-            value,
-            forward_window,
+            window,
             n_clinical=n_clinical,
             th_pollen=th_pollen,
             th_sum=th_sum,
         ):
-            start_idx = index
-            break
-
-    for index, value in enumerate(series):
-        window_start = max(0, index - window_clinical + 1)
-        backward_window = series[window_start : index + 1]
-        if _window_meets_clinical_rule(
-            value,
-            backward_window,
-            n_clinical=n_clinical,
-            th_pollen=th_pollen,
-            th_sum=th_sum,
-        ):
-            end_idx = index
+            if start_idx is None:
+                start_idx = index
+            end_idx = index + window_clinical - 1
 
     if start_idx is None or end_idx is None or end_idx < start_idx:
         return None, None

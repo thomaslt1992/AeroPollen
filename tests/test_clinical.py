@@ -64,9 +64,9 @@ def test_manual_clinical_parameters_are_applied_without_preset() -> None:
         interpolation=False,
     )
 
-    assert result.loc[0, "ps_start"] == "2020-01-02"
-    assert result.loc[0, "ps_end"] == "2020-01-06"
-    assert result.loc[0, "ps_length"] == 5
+    assert result.loc[0, "ps_start"] == "2020-01-01"
+    assert result.loc[0, "ps_end"] == "2020-01-08"
+    assert result.loc[0, "ps_length"] == 8
     assert result.loc[0, "day_threshold"] == 5
 
 
@@ -163,3 +163,20 @@ def test_ppp_auto_resolves_each_species_from_yaml():
         "ragweed": 10,
     }
     assert result["PPP"].tolist() == [10, 10]
+
+
+def test_birch_season_uses_full_qualifying_window_boundaries():
+    data = pd.DataFrame({
+        "Date": pd.date_range("2016-03-28", periods=7),
+        "Betula": [6.057379, 3.509563, 10.6052, 305.171, 447.6192, 79.29375, 467.2175],
+    })
+    row = calculate_ps(data, method="clinical", interpolation=False).iloc[0]
+    assert row["ps_start"] == "2016-03-28"
+    assert row["ps_end"] == "2016-04-03"
+    assert row["ps_start_doy"] == 88
+
+
+def test_clinical_requires_complete_window():
+    data = pollen_frame([10.0] * 5)
+    row = calculate_ps(data, method="clinical", interpolation=False).iloc[0]
+    assert pd.isna(row["ps_start"])
