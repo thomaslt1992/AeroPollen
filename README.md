@@ -84,7 +84,7 @@ Omit `--output` to print CSV results in the terminal and omit `--species` to pro
 | **Percentage** | Contains the specified fraction of the annual pollen integral. At 95%, 2.5% of the cumulative integral is excluded at each end. |
 | **Moving** | Uses a centered moving average; season boundaries surround its maximum and are defined by the moving-average threshold. |
 | **Grains** | Starts with the first qualifying run and ends with the last, requiring a specified number of retained observations at or above a concentration threshold. |
-| **Clinical** | Uses a species-specific 5-of-7-day rule with minimum daily concentrations and a cumulative threshold for the five highest qualifying days. The season starts on the first day of the earliest qualifying full window and ends on the last day of the latest qualifying full window, regardless of the boundary-day concentrations. |
+| **Clinical** | Uses a species-specific 5-of-7-day rule with minimum daily concentrations and a cumulative threshold, based on EAACI definitions. The start and end dates must themselves satisfy the daily concentration threshold; they are qualifying days, not necessarily the outer edges of the seven-day window. |
 
 The clinical method additionally returns Peak Pollen Period (PPP) intervals within the identified season: `ppp_start_doy`, `ppp_end_doy`, `ppp_length`, `PPP` (total days), and `total_ppp_seasons`. The implementation requires **three consecutive days** at or above the species-specific `day_threshold` defined in the YAML file.
 
