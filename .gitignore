@@ -22,5 +22,4 @@ __pypackages__/
 notes.md
 *.ipynb
 
-pollen_vienna_all.csv
-real_data_aeropollen.csv
+Test_Kringing_Seasons/*
