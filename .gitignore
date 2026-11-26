@@ -21,3 +21,6 @@ __pypackages__/
 # Local project notes
 notes.md
 *.ipynb
+
+pollen_vienna_all.csv
+real_data_aeropollen.csv
